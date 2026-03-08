@@ -302,7 +302,7 @@ function LandingPage({ onStart }) {
              <Activity className="hidden text-blue-600" size={24} />
           </div>
           <span className="text-xl font-extrabold tracking-tight text-slate-800">
-            Axa <span className="text-blue-600">ISHIP</span>
+            Kendari <span className="text-blue-600">ISHIP</span>
           </span>
         </div>
         <button 
