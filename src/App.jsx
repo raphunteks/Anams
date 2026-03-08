@@ -475,7 +475,7 @@ ${selectedDisease.tatalaksana}
              <img src="/logo-axaiship.png" alt="Axa Logo" className="object-cover h-full w-full" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}/>
              <Activity className="hidden text-blue-600" size={18} />
           </div>
-          <h1 className="text-lg font-bold text-slate-800">Axa ISHIP Generator</h1>
+          <h1 className="text-lg font-bold text-slate-800">Kendari ISHIP</h1>
         </div>
         <button 
           onClick={onBack}
