@@ -471,38 +471,72 @@ function LandingPage({ onStart, onGoAdmin }) {
 
       let parsedDocs = [];
       let currentWah = "";
+      
+      const isNum = (str) => /^\d+[\.\)]?$/.test(str.trim());
 
       rows.forEach(row => {
         if (!row || !row.c) return;
         const cells = row.c.map(cell => cell && cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : '');
 
-        const wahanaIndex = cells.findIndex(c => c.toUpperCase() === "WAHANA");
+        // 1. DETEKSI WAHANA CERDAS (Menangkap semua pola)
+        const wahanaIndex = cells.findIndex(c => c.toUpperCase().includes("WAHANA"));
         if (wahanaIndex !== -1) {
-            for (let i = wahanaIndex + 1; i < cells.length; i++) {
-                if (cells[i] && cells[i] !== ":" && cells[i] !== "") {
-                    currentWah = cells[i];
-                    break;
+            const cellText = cells[wahanaIndex];
+            if (cellText.includes(":") && cellText.split(":")[1].trim().length > 0) {
+                currentWah = cellText.split(":")[1].trim();
+            } else {
+                for (let i = wahanaIndex + 1; i < cells.length; i++) {
+                    if (cells[i] && cells[i] !== ":" && cells[i] !== "") {
+                        currentWah = cells[i].replace(/^:\s*/, '').trim();
+                        break;
+                    }
                 }
+            }
+        } else {
+            // Fallback pendeteksi Wahana jika tidak ada keyword 'WAHANA'
+            const rsMatch = cells.find(c => c.toUpperCase().startsWith("RSUD ") || c.toUpperCase().startsWith("RSUP ") || c.toUpperCase().startsWith("RS ") || c.toUpperCase().startsWith("RUMAH SAKIT") || c.toUpperCase().startsWith("PUSKESMAS "));
+            if (rsMatch && cells.filter(c => c !== "").length <= 4) {
+                currentWah = rsMatch.replace(/^:\s*/, '').trim();
             }
         }
 
-        const univIndex = cells.findIndex(c => c.toLowerCase().includes("universitas"));
+        // 2. DETEKSI NAMA DOKTER CERDAS
+        let docName = "";
+        const univIndex = cells.findIndex(c => c.toUpperCase().includes("UNIV") || c.toUpperCase().includes("FAKULTAS"));
+        
         if (univIndex > 0) {
-            let docName = "";
             for (let i = univIndex - 1; i >= 0; i--) {
-                if (cells[i] && isNaN(cells[i]) && !["ANGGOTA", "CHIEF"].includes(cells[i].toUpperCase())) {
-                    docName = cells[i];
+                let text = cells[i].replace(/[\n\r]/g, ' ').trim();
+                if (text && isNaN(text) && !["ANGGOTA", "CHIEF", "NAMA", "NAMA DOKTER", "PESERTA"].includes(text.toUpperCase())) {
+                    docName = text;
                     break;
                 }
             }
+        } else {
+            // Fallback list nomor (contoh: [1, Nama Dokter, Keterangan])
+            let c0 = cells[0];
+            let c1 = cells[1];
+            let c2 = cells[2];
             
-            if (docName && docName.toLowerCase() !== "nama" && currentWah) {
-               let finalName = docName;
+            if (c0 && isNum(c0) && c1 && c1.length > 3 && !c1.toUpperCase().includes("NAMA")) {
+                docName = c1;
+            } else if (c1 && isNum(c1) && c2 && c2.length > 3 && !c2.toUpperCase().includes("NAMA")) {
+                docName = c2;
+            }
+        }
+        
+        // Perekaman data valid
+        if (docName && currentWah) {
+           let finalName = docName.split('\n')[0].trim();
+           if (finalName.length > 3 && finalName.toUpperCase() !== "NAMA" && finalName.toUpperCase() !== "NAMA PESERTA") {
                if (!/^drg\.?/i.test(finalName) && !/^dr\.?/i.test(finalName)) {
                    finalName = "drg. " + finalName;
                }
-               parsedDocs.push({ nama: finalName, wahana: currentWah });
-            }
+               // Cegah duplikasi
+               if (!parsedDocs.find(d => d.nama === finalName && d.wahana === currentWah)) {
+                   parsedDocs.push({ nama: finalName, wahana: currentWah });
+               }
+           }
         }
       });
 
