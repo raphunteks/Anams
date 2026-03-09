@@ -153,7 +153,11 @@ function parseAnamnesis(template, gender, toothNum) {
     return template.replace(/{{GENDER}}/g, p_gender).replace(/{{TOOTH_LOCATION}}/g, p_loc);
 }
 
+// ==========================================
+// DATABASE DIAGNOSIS KEDOKTERAN GIGI
+// ==========================================
 const dentalDatabase = [
+  // --- K02 ---
   {
     code: "K02.0",
     name: "Caries limited to enamel",
@@ -185,6 +189,48 @@ const dentalDatabase = [
     tatalaksana: "1. KIE teknik menyikat gigi dengan bulu sikat halus.\n2. Pembersihan kavitas dengan bur atau ekskavator.\n3. Restorasi menggunakan Glass Ionomer Cement (GIC)."
   },
   {
+    code: "K02.3",
+    name: "Arrested dental caries",
+    anamnesis: "{{GENDER}} tidak memiliki keluhan sakit atau ngilu. Pasien hanya menyadari adanya bercak kecoklatan atau kehitaman pada {{TOOTH_LOCATION}} yang sudah lama tidak membesar.",
+    ekstraOral: "TAK.",
+    intraOral: "Terdapat lesi karies berwarna coklat/hitam pekat. Saat diekskavasi atau di-sondase, dasar kavitas terasa keras dan licin. \n- Tes Sondase: (-) keras.\n- Tes Perkusi: (-)\n- Tes Vitalitas: (+)",
+    diagnosis: "K02.3 - Arrested dental caries (Karies Terhenti)",
+    dd: "Diskolorasi Ekstrinsik, Karies Dentin Aktif",
+    tatalaksana: "1. KIE bahwa karies telah terhenti prosesnya.\n2. Observasi berkala.\n3. Jika mengganggu estetika, dapat dilakukan restorasi estetik (Komposit) setelah preparasi minimal."
+  },
+  {
+    code: "K02.4",
+    name: "Odontoclasia",
+    anamnesis: "{{GENDER}} seringkali asimtomatik (tanpa gejala) atau mengeluhkan {{TOOTH_LOCATION}} terasa sedikit goyang atau ada noda kemerahan/pink pada mahkota gigi (pink tooth).",
+    ekstraOral: "TAK.",
+    intraOral: "Tampak defek resorpsi pada area servikal atau mahkota. Jika resorpsi internal meluas, tampak bayangan kemerahan (pink spot). \n- Perkusi: (+/-)\n- Kegoyangan: bisa derajat 1-2.\n- Rontgen: resorpsi struktur gigi internal/eksternal.",
+    diagnosis: "K02.4 - Odontoclasia (Resorpsi Internal / Eksternal Gigi)",
+    dd: "Karies Servikal Profunda",
+    tatalaksana: "1. Rujukan foto rontgen periapikal untuk observasi perluasan resorpsi.\n2. Jika resorpsi internal memengaruhi pulpa tanpa perforasi akar luar: Perawatan Saluran Akar (PSA).\n3. Jika resorpsi eksternal parah/gigi sangat goyang: Ekstraksi."
+  },
+  {
+    code: "K02.8",
+    name: "Other dental caries",
+    anamnesis: "{{GENDER}} mengeluhkan adanya rasa ngilu/sakit yang tidak spesifik penempatannya di {{TOOTH_LOCATION}} (misal: terdapat karies sekunder di bawah tumpatan lama).",
+    ekstraOral: "TAK.",
+    intraOral: "Terdapat karies di sekitar tepi restorasi lama (karies sekunder). \n- Tes Sondase: (+/-) menyangkut di tepi tumpatan.\n- Vitalitas: (+)",
+    diagnosis: "K02.8 - Other dental caries (Karies Sekunder / Recurrent caries)",
+    dd: "Tumpatan Overhang / Bocor",
+    tatalaksana: "1. KIE.\n2. Pembongkaran tumpatan lama yang bocor.\n3. Pembersihan karies sekunder.\n4. Restorasi ulang yang adekuat."
+  },
+  {
+    code: "K02.9",
+    name: "Dental caries, unspecified",
+    anamnesis: "{{GENDER}} datang mengeluhkan {{TOOTH_LOCATION}} berlubang. (Diagnosis belum spesifik pada kunjungan pertama).",
+    ekstraOral: "TAK.",
+    intraOral: "Tampak lesi karies pada gigi. Penilaian lebih lanjut masih diperlukan.",
+    diagnosis: "K02.9 - Dental caries, unspecified",
+    dd: "Karies Dentin, Pulpitis",
+    tatalaksana: "1. KIE.\n2. Ekskavasi jaringan karies untuk menentukan kedalaman sebenarnya.\n3. Penegakan diagnosis definitif pada tahapan selanjutnya."
+  },
+
+  // --- K04 ---
+  {
     code: "K04.0",
     name: "Pulpitis",
     anamnesis: "{{GENDER}} datang mengeluhkan nyeri spontan dan berdenyut pada {{TOOTH_LOCATION}}, terutama terjadi pada malam hari hingga mengganggu tidur. Nyeri tajam, bertahan lama meski stimulus dihilangkan, dan kadang menjalar ke area kepala atau telinga.",
@@ -205,6 +251,46 @@ const dentalDatabase = [
     tatalaksana: "1. KIE rencana PSA (Perawatan Saluran Akar) atau Ekstraksi.\n2. Buka akses (Open bur) & Preparasi saluran akar.\n3. Irigasi (NaOCl 2.5% & Saline).\n4. Medikasi intrakanal (CHKM/TKF atau Kalsium Hidroksida pasta).\n5. Tumpatan sementara.\n*Jika mahkota sisa terlalu sedikit, pro ekstraksi."
   },
   {
+    code: "K04.2",
+    name: "Pulp degeneration",
+    anamnesis: "{{GENDER}} biasanya tidak ada keluhan rasa sakit (asimtomatik) pada {{TOOTH_LOCATION}}. Ditemukan secara tidak sengaja saat pemeriksaan rutin atau foto rontgen.",
+    ekstraOral: "TAK.",
+    intraOral: "Gigi mungkin tampak utuh atau dengan tumpatan besar. \n- Tes Vitalitas: seringkali merespon lambat atau (-).\n- Rontgen: Tampak penyempitan atau obliterasi total pada kamar pulpa/saluran akar (Kalsifikasi pulpa).",
+    diagnosis: "K04.2 - Pulp degeneration (Degenerasi Pulpa / Kalsifikasi)",
+    dd: "Nekrosis Pulpa",
+    tatalaksana: "1. Observasi jika asimtomatik.\n2. KIE kepada pasien mengenai kondisi giginya.\n3. Jika diperlukan untuk restorasi protesa, perawatan PSA mungkin sangat sulit akibat kalsifikasi."
+  },
+  {
+    code: "K04.3",
+    name: "Abnormal hard tissue formation in pulp",
+    anamnesis: "{{GENDER}} tidak ada keluhan atau kadang mengeluhkan nyeri tumpul/ngilu (neuralgia) tanpa penyebab yang jelas pada area {{TOOTH_LOCATION}}.",
+    ekstraOral: "TAK.",
+    intraOral: "Gigi tampak normal. \n- Pemeriksaan klinis seringkali tidak konklusif.\n- Rontgen: Tampak gambaran radiopak membulat di dalam kamar pulpa (Pulp Stone / Dentikel).",
+    diagnosis: "K04.3 - Abnormal hard tissue formation in pulp (Pulp Stone)",
+    dd: "Pulpitis Irreversibel Asimtomatik",
+    tatalaksana: "1. Observasi jika tidak ada keluhan.\n2. Jika menimbulkan gejala nyeri persisten (neuralgia pulpa), dilakukan Perawatan Saluran Akar (PSA) dengan mengangkat pulp stone tersebut."
+  },
+  {
+    code: "K04.4",
+    name: "Acute apical periodontitis of pulpal origin",
+    anamnesis: "{{GENDER}} mengeluh {{TOOTH_LOCATION}} terasa sangat sakit saat digunakan mengunyah atau bersentuhan dengan gigi lawan. Terasa seperti giginya 'memanjang' atau lebih tinggi dari gigi lain. Sakit terus-menerus.",
+    ekstraOral: "Wajah mungkin sedikit asimetris akibat pembengkakan ringan. KGB submandibula teraba dan sakit saat ditekan.",
+    intraOral: "Gigi biasanya terdapat karies profunda mati atau tumpatan lama. \n- Tes Sondase: (-)\n- Tes Perkusi: (+ sakit sangat tajam)\n- Tes Palpasi di apikal: (+ sakit)\n- Tes Vitalitas: (-)",
+    diagnosis: "K04.4 - Acute apical periodontitis of pulpal origin",
+    dd: "Abses Periapikal Akut",
+    tatalaksana: "1. KIE.\n2. Buka akses pulpa (Open bur) untuk drainase gas/pus dari saluran akar.\n3. Penyesuaian oklusi (Oclusal adjustment) agar tidak trauma oklusi.\n4. Jika eksudat/pus keluar deras, biarkan terbuka (open dressing) 1-2 hari. Jika kering, beri medikasi intrakanal dan tumpat sementara longgar.\n5. Resep: Amoxicillin 500mg 3x1, Asam Mefenamat 500mg 3x1."
+  },
+  {
+    code: "K04.5",
+    name: "Chronic apical periodontitis",
+    anamnesis: "{{GENDER}} mengeluhkan {{TOOTH_LOCATION}} berlubang besar, dulunya pernah sakit, tapi sekarang hanya kadang-kadang terasa sedikit tidak nyaman jika diketuk keras atau ditekan.",
+    ekstraOral: "TAK.",
+    intraOral: "Gigi nekrosis. Tes vitalitas (-). Tes perkusi kadang (+ ringan). Tes palpasi (-).\n- Rontgen: Tampak radiolusensi membulat kecil hingga sedang di area periapikal (Granuloma Periapikal).",
+    diagnosis: "K04.5 - Chronic apical periodontitis (Granuloma Apikalis)",
+    dd: "Kista Radikuler (K04.8), Abses Periapikal Kronis",
+    tatalaksana: "1. KIE.\n2. Perawatan Saluran Akar (PSA) multipel kunjungan.\n3. Pembersihan, pembentukan saluran, Irigasi.\n4. Aplikasi medikasi intrakanal (Kalsium Hidroksida) untuk merangsang penyembuhan lesi apikal."
+  },
+  {
     code: "K04.6",
     name: "Chronic apical periodontitis (Sisa Akar Dewasa / Gigi Utuh Mati)",
     anamnesis: "{{GENDER}} datang dengan keluhan terdapat sisa akar (atau lubang besar yang mengakibatkan gigi mati) pada {{TOOTH_LOCATION}}. Gigi tersebut sudah lama berlubang/patah dan saat ini tidak ada keluhan nyeri spontan yang akut, namun dirasa mengganggu atau pasien sadar perlunya mencabut sisa akar tersebut agar tidak menjadi fokal infeksi di kemudian hari.",
@@ -215,6 +301,88 @@ const dentalDatabase = [
     tatalaksana: "1. KIE perlunya pencabutan sisa akar (fokal infeksi).\n2. Rencana Ekstraksi Permanen (Pencabutan sisa akar).\n3. Irigasi dan kuretase soket pasca pencabutan."
   },
   {
+    code: "K04.7",
+    name: "Periapical abscess without sinus",
+    anamnesis: "{{GENDER}} datang mengeluhkan bengkak besar pada gusi/pipi di area {{TOOTH_LOCATION}}. Terasa sangat sakit, berdenyut, memerah, dan hangat. Pasien merasakan demam ringan dan nyeri hebat saat mengunyah.",
+    ekstraOral: "Wajah asimetris, terdapat pembengkakan berbatas difus/jelas, hiperemis, palpasi sakit, teraba hangat. Terkadang fluktuatif. KGB membesar & sakit.",
+    intraOral: "Pembengkakan pada vestibular/mukobukal fold di area periapikal gigi penyebab. Mukosa merah, palpasi (+ fluktuatif/lunak), perkusi (+ sakit hebat). Vitalitas (-).",
+    diagnosis: "K04.7 - Periapical abscess without sinus (Abses Periapikal Akut)",
+    dd: "Abses Periodontal, Selulitis",
+    tatalaksana: "1. KIE urgensi kondisi infeksi.\n2. Open bur untuk membebaskan drainase pus dari kamar pulpa.\n3. Jika abses submukosa sudah fluktuatif (matang): Lakukan Insisi & Drainase.\n4. Resep Antibiotik (Amoxicillin 500mg + Metronidazole 500mg) & Analgesik kuat.\n5. Pasien diinstruksikan kontrol 3-5 hari kemudian."
+  },
+  {
+    code: "K04.8",
+    name: "Radicular cyst",
+    anamnesis: "{{GENDER}} menyadari adanya pembesaran lambat tanpa rasa sakit di sekitar {{TOOTH_LOCATION}} atau perubahan warna gigi. Bila kista sudah membesar, pasien dapat merasakan giginya goyang.",
+    ekstraOral: "Jika kista sangat besar, dapat menyebabkan asimetri wajah atau ekspansi tulang kortikal yang teraba keras.",
+    intraOral: "Gigi nekrosis (-). Mungkin ada ekspansi tulang bukal/palatal. \n- Rontgen: Tampak radiolusensi bulat dengan batas tepi sangat tegas/radiopak tipis, berdiameter > 1 cm di area apeks akar.",
+    diagnosis: "K04.8 - Radicular cyst (Kista Radikuler)",
+    dd: "Granuloma Apikalis (K04.5), Kista Dentigerous",
+    tatalaksana: "1. KIE bahwa terdapat kista yang harus diangkat.\n2. Rujuk ke Sp.BM (Spesialis Bedah Mulut) atau lakukan Perawatan Endodontik Bedah (Apeksreseksi + Enukleasi Kista).\n3. Ekstraksi gigi penyebab + Kuretase."
+  },
+
+  // --- K00 ---
+  {
+    code: "K00.0",
+    name: "Anodontia",
+    anamnesis: "{{GENDER}} atau orang tua pasien mengeluhkan ada gigi permanen atau sulung di regio {{TOOTH_LOCATION}} yang tidak tumbuh sama sekali meskipun sudah melewati usia erupsi normal.",
+    ekstraOral: "Profil wajah mungkin terpengaruh jika anodontia menyeluruh, namun umumnya TAK pada hipodontia ringan.",
+    intraOral: "Kehilangan gigi (missing teeth). Diastema multipel. Tulang alveolar ridge di area tak bergigi mungkin datar/tipis.\n- Rontgen Panoramik: Konfirmasi ketiadaan benih gigi.",
+    diagnosis: "K00.0 - Anodontia (Hipodontia / Oligodontia)",
+    dd: "Impaksi Gigi (K00.6)",
+    tatalaksana: "1. KIE kondisi genetik/tumbuh kembang.\n2. Pembuatan rontgen panoramik.\n3. Rencana pembuatan gigi tiruan (Protesa GTSL / GTSJ / Implan)."
+  },
+  {
+    code: "K00.1",
+    name: "Supernumerary teeth",
+    anamnesis: "{{GENDER}} mengeluhkan ada gigi tambahan yang tumbuh tidak pada tempatnya di dekat area {{TOOTH_LOCATION}}, menyebabkan gigi lain berjejal atau ada benjolan keras di langit-langit mulut/gusi.",
+    ekstraOral: "TAK.",
+    intraOral: "Tampak adanya gigi ekstra (lebih dari jumlah normal). Sering ditemukan di garis tengah rahang atas (Mesiodens) atau di area premolar (Paramolar).",
+    diagnosis: "K00.1 - Supernumerary teeth (Mesiodens / Paramolar)",
+    dd: "Odontoma",
+    tatalaksana: "1. KIE.\n2. Rontgen periapikal/panoramik/CBCT untuk melihat letak akar.\n3. Ekstraksi / Odontektomi gigi supernumerary tersebut."
+  },
+  {
+    code: "K00.2",
+    name: "Abnormalities of size and form of teeth",
+    anamnesis: "{{GENDER}} mengeluhkan bentuk {{TOOTH_LOCATION}} aneh, tidak sama dengan sebelahnya, atau ukurannya terlalu kecil/besar (Misal: bentuk seperti pasak/kerucut).",
+    ekstraOral: "TAK.",
+    intraOral: "Ukuran gigi lebih kecil (Mikrodontia) atau lebih besar (Makrodontia). Bentuk mahkota aneh, contoh: Peg-shaped lateral incisor.",
+    diagnosis: "K00.2 - Abnormalities of size and form of teeth (Mikrodontia / Peg-shaped)",
+    dd: "Gigi Susu Bertahan (Persistensi)",
+    tatalaksana: "1. KIE variasi anatomi genetik.\n2. Perawatan estetik: Restorasi direct komposit (veneer) atau pembuatan mahkota tiruan (Crown)."
+  },
+  {
+    code: "K00.3",
+    name: "Mottled teeth",
+    anamnesis: "{{GENDER}} mengeluhkan warna {{TOOTH_LOCATION}} tidak merata, terdapat bercak putih (opaque) berbintik-bintik, atau garis-garis kecoklatan sejak gigi tumbuh. Biasanya memiliki riwayat asupan air tinggi fluor saat kecil.",
+    ekstraOral: "TAK.",
+    intraOral: "Tampak bercak putih kapur (white spot), kuning, hingga coklat gelap pada permukaan email. Permukaan email bisa jadi pitting.",
+    diagnosis: "K00.3 - Mottled teeth (Fluorosis Dental)",
+    dd: "Amelogenesis Imperfekta (K00.5), Hipoplasia Email",
+    tatalaksana: "1. KIE penyebab fluorosis.\n2. Ringan: Bleaching atau Mikroabrasi email.\n3. Sedang-Berat: Veneer komposit / Porcelain Veneer."
+  },
+  {
+    code: "K00.4",
+    name: "Disturbances in tooth formation",
+    anamnesis: "{{GENDER}} mengeluhkan {{TOOTH_LOCATION}} mudah rapuh, berlubang, atau permukaannya kasar bergaris-garis kuning kecoklatan sejak gigi tersebut tumbuh.",
+    ekstraOral: "TAK.",
+    intraOral: "Tampak defek pada kuantitas email (Hipoplasia email). Terdapat pit, groove (alur), atau hilangnya email sebagian/seluruhnya.",
+    diagnosis: "K00.4 - Disturbances in tooth formation (Hipoplasia Email)",
+    dd: "Amelogenesis Imperfekta, Karies Rampan",
+    tatalaksana: "1. KIE perlindungan struktur gigi.\n2. Aplikasi Topikal Fluor (TAF).\n3. Restorasi dengan GIC atau Komposit."
+  },
+  {
+    code: "K00.5",
+    name: "Hereditary disturbances in tooth structure",
+    anamnesis: "{{GENDER}} mengeluhkan {{TOOTH_LOCATION}} (dan gigi lainnya) mudah aus, berwarna kuning/kecoklatan transparan, dan sangat sensitif. Adanya riwayat keluhan serupa di keluarga.",
+    ekstraOral: "TAK.",
+    intraOral: "Amelogenesis / Dentinogenesis Imperfekta: Email tipis, sangat rapuh, gigi tampak menguning transparan. Rontgen: pulp chamber mengecil.",
+    diagnosis: "K00.5 - Hereditary disturbances in tooth structure",
+    dd: "Fluorosis Berat",
+    tatalaksana: "1. KIE tentang kondisi genetik.\n2. Manajemen preventif: kontrol karies ketat, aplikasi fluor.\n3. Full mouth rehabilitation."
+  },
+  {
     code: "K00.6",
     name: "Disturbances in tooth eruption (Persistensi / Gigi Goyang)",
     anamnesis: "{{GENDER}} datang dengan keluhan gigi sulung pada {{TOOTH_LOCATION}} sudah mulai goyang (mobile) dan mengganggu aktivitas mengunyah. Telah terlihat adanya gigi permanen pengganti yang mulai tumbuh/erupsi di belakangnya. Pasien/Keluarga ingin gigi sulung tersebut dicabut agar pertumbuhan susunan gigi permanen tidak terganggu.",
@@ -223,6 +391,36 @@ const dentalDatabase = [
     diagnosis: "K00.6 - Disturbances in tooth eruption (Persistensi Gigi Sulung / Prolonged Retention)",
     dd: "Impaksi M3",
     tatalaksana: "1. KIE kepada pasien dan keluarga mengenai proses pergantian gigi dan perlunya pencabutan gigi sulung.\n2. Rencana Ekstraksi Gigi Sulung (menggunakan anestesi topikal/chlorethyl atau anestesi infiltrasi lokal)."
+  },
+  {
+    code: "K00.7",
+    name: "Teething syndrome",
+    anamnesis: "Keluarga {{GENDER}} (usia balita) mengeluhkan anak rewel, sering menangis malam, terus-menerus memasukkan jari ke dalam mulut, ngeces, dan kadang demam ringan karena akan tumbuh gigi di area {{TOOTH_LOCATION}}.",
+    ekstraOral: "Suhu tubuh anak mungkin sedikit meningkat (subfebris).",
+    intraOral: "Gusi pada area gigi sulung yang akan erupsi tampak membengkak membulat, kemerahan, dan kadang tampak pucat di puncaknya.",
+    diagnosis: "K00.7 - Teething syndrome (Sindrom Erupsi Gigi)",
+    dd: "Infeksi Herpetik Gingivostomatitis",
+    tatalaksana: "1. KIE kepada orang tua bahwa ini proses fisiologis normal.\n2. Berikan teether mainan dingin.\n3. Jika nyeri mengganggu tidur, resepkan Paracetamol sirup."
+  },
+  {
+    code: "K00.8",
+    name: "Other disorders of tooth development",
+    anamnesis: "{{GENDER}} mengeluhkan adanya perubahan warna yang aneh pada {{TOOTH_LOCATION}} tanpa adanya kavitas karies (misal diskolorasi pasca trauma masa lampau).",
+    ekstraOral: "TAK.",
+    intraOral: "Tampak kelainan lokal pada satu gigi. Penilaian lebih lanjut masih diperlukan.",
+    diagnosis: "K00.8 - Other disorders of tooth development",
+    dd: "Diskolorasi intrinsik trauma",
+    tatalaksana: "1. Evaluasi klinis dan radiografis.\n2. Tatalaksana sesuai gejala klinis spesifik."
+  },
+  {
+    code: "K00.9",
+    name: "Disorder of tooth development, unspecified",
+    anamnesis: "{{GENDER}} datang dengan keluhan kelainan bentuk/tumbuhnya {{TOOTH_LOCATION}} yang belum dapat diklasifikasikan dengan jelas pada kunjungan awal.",
+    ekstraOral: "Bergantung keparahan klinis.",
+    intraOral: "Terdapat anomali pertumbuhan/perkembangan, evaluasi rontgenografi masih diperlukan.",
+    diagnosis: "K00.9 - Disorder of tooth development, unspecified",
+    dd: "Kelainan Dental YTT",
+    tatalaksana: "1. KIE perlunya pemeriksaan penunjang lanjutan.\n2. Rujuk untuk pengambilan foto Rontgen Panoramik/CBCT."
   }
 ];
 
