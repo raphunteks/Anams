@@ -204,7 +204,7 @@ const dentalDatabase = [
     name: "Pulpitis",
     anamnesis: "{{GENDER}} datang mengeluhkan nyeri spontan dan berdenyut pada {{TOOTH_LOCATION}}, terutama terjadi pada malam hari hingga mengganggu tidur. Nyeri tajam, bertahan lama meski stimulus dihilangkan, dan kadang menjalar ke area kepala atau telinga.",
     ekstraOral: "Wajah simetris, tidak ada pembengkakan. KGB submandibula mungkin sedikit teraba namun umumnya tidak sakit.",
-    intraOral: "Terdapat kavitas profunda mencapai kamar pulpa (karies profunda perforasi). \n- Tes Sondase: (+ nyeri tajam)\n- Tes Perkusi: (+/- biasanya ringan)\n- Tes Palpasi: (-)\n- Tes Vitalitas/Dingin: (+ over reaktif / nyeri bertahan lama).",
+    intraOral: "Terdapat kavitas profunda mencapai kamar pulpa (karies profunda perforasi). \n- Tes Sondase: (+ nyeri tajam)\n- Tes Perkusi: (+/- biasanya ringan)\n- Palpasi: (-)\n- Tes Vitalitas/Dingin: (+ over reaktif / nyeri bertahan lama).",
     diagnosis: "K04.0 - Pulpitis (Pulpitis Irreversibel Simtomatik)",
     dd: "Periodontitis Apikalis Akut, Nekrosis Pulpa (parsial)",
     tatalaksana: "1. KIE rencana perawatan saluran akar (PSA).\n2. Anastesi lokal (jika nyeri hebat).\n3. Open bur & Ekstirpasi pulpa.\n4. Medikasi intrakanal (Eugenol / Formokresol pada kapas kecil) atau Ca(OH)2.\n5. Tumpatan sementara.\n6. Resep Analgesik: Asam Mefenamat 500mg 3x1 p.r.n."
@@ -479,7 +479,7 @@ function LandingPage({ onStart, onGoAdmin }) {
         const cells = row.c.map(cell => cell && cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : '');
 
         // 1. DETEKSI WAHANA CERDAS (Menangkap semua pola)
-        const wahanaIndex = cells.findIndex(c => c.toUpperCase().includes("WAHANA"));
+        const wahanaIndex = cells.findIndex(c => String(c).toUpperCase().includes("WAHANA"));
         if (wahanaIndex !== -1) {
             const cellText = cells[wahanaIndex];
             if (cellText.includes(":") && cellText.split(":")[1].trim().length > 0) {
@@ -493,27 +493,43 @@ function LandingPage({ onStart, onGoAdmin }) {
                 }
             }
         } else {
-            // Fallback pendeteksi Wahana jika tidak ada keyword 'WAHANA'
-            const rsMatch = cells.find(c => c.toUpperCase().startsWith("RSUD ") || c.toUpperCase().startsWith("RSUP ") || c.toUpperCase().startsWith("RS ") || c.toUpperCase().startsWith("RUMAH SAKIT") || c.toUpperCase().startsWith("PUSKESMAS "));
-            if (rsMatch && cells.filter(c => c !== "").length <= 4) {
+            // Fallback pendeteksi Wahana jika tidak ada keyword 'WAHANA' tapi format barisnya KABUPATEN/KOTA/RSUD
+            const rsMatch = cells.find(c => {
+                const upperC = String(c).toUpperCase();
+                return (upperC.startsWith("RSUD ") || 
+                       upperC.startsWith("RSUP ") || 
+                       upperC.startsWith("RS ") || 
+                       upperC.startsWith("RUMAH SAKIT") || 
+                       upperC.startsWith("PUSKESMAS ") ||
+                       upperC.startsWith("KABUPATEN ") ||
+                       upperC.startsWith("KOTA ") ||
+                       upperC.startsWith("PROVINSI ")) && upperC.length > 5;
+            });
+            
+            const isDataRow = cells.some(c => String(c).toUpperCase().includes("UNIV") || String(c).toUpperCase().includes("FAKULTAS"));
+            const filledCols = cells.filter(c => c !== "").length;
+
+            // Jika baris berisi rsMatch dan bukan baris data univ, jadikan Wahana
+            if (rsMatch && !isDataRow && filledCols <= 4 && !rsMatch.toUpperCase().includes("SISA")) {
                 currentWah = rsMatch.replace(/^:\s*/, '').trim();
             }
         }
 
         // 2. DETEKSI NAMA DOKTER CERDAS
         let docName = "";
-        const univIndex = cells.findIndex(c => c.toUpperCase().includes("UNIV") || c.toUpperCase().includes("FAKULTAS"));
+        const univIndex = cells.findIndex(c => String(c).toUpperCase().includes("UNIV") || String(c).toUpperCase().includes("FAKULTAS"));
         
         if (univIndex > 0) {
             for (let i = univIndex - 1; i >= 0; i--) {
                 let text = cells[i].replace(/[\n\r]/g, ' ').trim();
-                if (text && isNaN(text) && !["ANGGOTA", "CHIEF", "NAMA", "NAMA DOKTER", "PESERTA"].includes(text.toUpperCase())) {
+                // Hindari header dan pastikan bukan angka urut
+                if (text && isNaN(text) && !["ANGGOTA", "CHIEF", "NAMA", "NAMA DOKTER", "PESERTA", "KETUA"].includes(text.toUpperCase()) && text.length > 3) {
                     docName = text;
                     break;
                 }
             }
         } else {
-            // Fallback list nomor (contoh: [1, Nama Dokter, Keterangan])
+            // Fallback list nomor jika tidak ada kolom Universitas
             let c0 = cells[0];
             let c1 = cells[1];
             let c2 = cells[2];
@@ -587,7 +603,7 @@ function LandingPage({ onStart, onGoAdmin }) {
       setMatchedDoc(found);
     } else {
       setIsValidated(false);
-      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai.");
+      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai Spreadsheet.");
     }
   };
 
