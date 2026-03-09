@@ -153,11 +153,7 @@ function parseAnamnesis(template, gender, toothNum) {
     return template.replace(/{{GENDER}}/g, p_gender).replace(/{{TOOTH_LOCATION}}/g, p_loc);
 }
 
-// ==========================================
-// DATABASE DIAGNOSIS KEDOKTERAN GIGI
-// ==========================================
 const dentalDatabase = [
-  // --- K02 ---
   {
     code: "K02.0",
     name: "Caries limited to enamel",
@@ -228,8 +224,6 @@ const dentalDatabase = [
     dd: "Karies Dentin, Pulpitis",
     tatalaksana: "1. KIE.\n2. Ekskavasi jaringan karies untuk menentukan kedalaman sebenarnya.\n3. Penegakan diagnosis definitif pada tahapan selanjutnya."
   },
-
-  // --- K04 ---
   {
     code: "K04.0",
     name: "Pulpitis",
@@ -320,8 +314,6 @@ const dentalDatabase = [
     dd: "Granuloma Apikalis (K04.5), Kista Dentigerous",
     tatalaksana: "1. KIE bahwa terdapat kista yang harus diangkat.\n2. Rujuk ke Sp.BM (Spesialis Bedah Mulut) atau lakukan Perawatan Endodontik Bedah (Apeksreseksi + Enukleasi Kista).\n3. Ekstraksi gigi penyebab + Kuretase."
   },
-
-  // --- K00 ---
   {
     code: "K00.0",
     name: "Anodontia",
@@ -428,9 +420,24 @@ const dentalDatabase = [
 // KOMPONEN APP ROOT (STATE MANAGER)
 // ==========================================
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'generator', 'admin_login', 'admin_dashboard'
-  const [verifiedDoctor, setVerifiedDoctor] = useState({ nama: '', wahana: '' });
+  // SessionStorage untuk menghindari log out ketika di-refresh
+  const [currentPage, setCurrentPage] = useState(() => {
+    return sessionStorage.getItem('appCurrentPage') || 'landing';
+  }); 
+  const [verifiedDoctor, setVerifiedDoctor] = useState(() => {
+    const saved = sessionStorage.getItem('verifiedDoctor');
+    return saved ? JSON.parse(saved) : { nama: '', wahana: '' };
+  });
   const [firebaseUser, setFirebaseUser] = useState(null);
+
+  // Sync state ke sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('appCurrentPage', currentPage);
+  }, [currentPage]);
+
+  useEffect(() => {
+    sessionStorage.setItem('verifiedDoctor', JSON.stringify(verifiedDoctor));
+  }, [verifiedDoctor]);
 
   // Inisiasi Auth Firebase untuk DB Cloud Vercel
   useEffect(() => {
@@ -456,12 +463,23 @@ export default function App() {
     setCurrentPage('generator');
   };
 
+  const handleDoctorLogout = () => {
+    sessionStorage.removeItem('verifiedDoctor');
+    setVerifiedDoctor({ nama: '', wahana: '' });
+    setCurrentPage('landing');
+  };
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('isAdminLoggedIn');
+    setCurrentPage('landing');
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-100 selection:text-blue-900">
       {currentPage === 'landing' && <LandingPage onStart={handleStart} onGoAdmin={() => setCurrentPage('admin_login')} />}
-      {currentPage === 'generator' && <GeneratorApp doctorData={verifiedDoctor} onBack={() => setCurrentPage('landing')} user={firebaseUser} />}
+      {currentPage === 'generator' && <GeneratorApp doctorData={verifiedDoctor} onBack={handleDoctorLogout} user={firebaseUser} />}
       {currentPage === 'admin_login' && <AdminLogin onLoginSuccess={() => setCurrentPage('admin_dashboard')} onBack={() => setCurrentPage('landing')} />}
-      {currentPage === 'admin_dashboard' && <AdminDashboard onBack={() => setCurrentPage('landing')} user={firebaseUser} />}
+      {currentPage === 'admin_dashboard' && <AdminDashboard onBack={handleAdminLogout} user={firebaseUser} />}
     </div>
   );
 }
@@ -741,25 +759,36 @@ function GeneratorApp({ doctorData, onBack, user }) {
   const medWrapperRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
-  // LOGIC TRACKING ONLINE DOCTORS KE DATABASE VERCEL/FIREBASE
+  // LOGIC TRACKING ONLINE DOCTORS KE DATABASE VERCEL/FIREBASE (Heartbeat Mechanism)
   useEffect(() => {
     if (!user || !db || !doctorData.nama) return;
     
-    // Buat ID unik untuk dokumen berdasarkan nama & wahana
     const safeId = `${doctorData.nama}_${doctorData.wahana}`.replace(/[^a-zA-Z0-9]/g, '_');
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'online_doctors', safeId);
     
-    // Write Status Online
+    // Tulis Status Awal Online
     setDoc(docRef, {
         nama: doctorData.nama,
         wahana: doctorData.wahana,
         loginTime: Date.now(),
+        lastActive: Date.now(),
         status: 'online'
-    }).catch(err => console.log("Tracker err", err));
+    }).catch(() => {});
 
-    // Hapus data saat dokter menekan "Tutup Aplikasi" atau merefresh halaman
+    // Heartbeat: Update lastActive setiap 30 detik
+    const heartbeat = setInterval(() => {
+        setDoc(docRef, { lastActive: Date.now() }, { merge: true }).catch(() => {});
+    }, 30000);
+
+    const handleUnload = () => {
+        deleteDoc(docRef).catch(() => {});
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
     return () => {
-        deleteDoc(docRef).catch(err => console.log("Tracker err", err));
+        clearInterval(heartbeat);
+        window.removeEventListener('beforeunload', handleUnload);
+        deleteDoc(docRef).catch(() => {});
     };
   }, [user, db, doctorData]);
 
@@ -1048,9 +1077,17 @@ function AdminLogin({ onLoginSuccess, onBack }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
+  // Auto skip jika admin sudah pernah login
+  useEffect(() => {
+    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+      onLoginSuccess();
+    }
+  }, []);
+
   const handleLogin = (e) => {
     e.preventDefault();
     if (username === 'adminexow' && password === 'verystrongpassword321') {
+      sessionStorage.setItem('isAdminLoggedIn', 'true');
       onLoginSuccess();
     } else {
       setError(true);
@@ -1099,6 +1136,13 @@ function AdminLogin({ onLoginSuccess, onBack }) {
 function AdminDashboard({ onBack, user }) {
   const [onlineDoctors, setOnlineDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(Date.now());
+
+  // Memaksa update UI setiap 30 detik untuk mendeteksi Ghost Session
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (!user || !db) {
@@ -1110,10 +1154,23 @@ function AdminDashboard({ onBack, user }) {
     const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'online_doctors');
     const unsubscribe = onSnapshot(collRef, (snapshot) => {
         const docs = [];
-        snapshot.forEach(doc => {
-           docs.push({ id: doc.id, ...doc.data() });
+        const now = Date.now();
+        
+        snapshot.forEach(docSnap => {
+           const data = docSnap.data();
+           
+           // FILTER GHOST SESSION
+           // Dokter dianggap offline jika tidak mengirim denyut (lastActive) selama 2 Menit
+           const isActive = data.lastActive ? (now - data.lastActive < 120000) : (now - data.loginTime < 86400000);
+           
+           if (isActive) {
+               docs.push({ id: docSnap.id, ...data });
+           } else {
+               // Hapus otomatis di belakang layar dari database
+               deleteDoc(docSnap.ref).catch(() => {});
+           }
         });
-        // Urutkan berdasarkan waktu login terbaru
+        
         docs.sort((a, b) => b.loginTime - a.loginTime);
         setOnlineDoctors(docs);
         setLoading(false);
@@ -1124,6 +1181,11 @@ function AdminDashboard({ onBack, user }) {
 
     return () => unsubscribe();
   }, [user]);
+
+  // Melakukan double filter untuk UI agar instan
+  const activeDoctors = onlineDoctors.filter(doc => {
+     return doc.lastActive ? (currentTime - doc.lastActive < 120000) : true;
+  });
 
   const formatTime = (timestamp) => {
     if(!timestamp) return "-";
@@ -1137,8 +1199,8 @@ function AdminDashboard({ onBack, user }) {
           <Activity size={24} className="text-red-400"/>
           <span className="text-xl font-bold">PIDGI Admin Monitor</span>
         </div>
-        <button onClick={onBack} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition text-sm font-medium">
-          Tutup Panel Admin
+        <button onClick={onBack} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition text-sm font-medium flex items-center">
+          <LogOut size={14} className="mr-1.5"/> Tutup & Logout Admin
         </button>
       </nav>
 
@@ -1149,7 +1211,7 @@ function AdminDashboard({ onBack, user }) {
              <div className="h-14 w-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-4"><Users size={28}/></div>
              <div>
                <p className="text-sm text-slate-500 font-medium">Dokter Sedang Online</p>
-               <h3 className="text-3xl font-black text-slate-800">{onlineDoctors.length}</h3>
+               <h3 className="text-3xl font-black text-slate-800">{activeDoctors.length}</h3>
              </div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
@@ -1157,17 +1219,17 @@ function AdminDashboard({ onBack, user }) {
              <div>
                <p className="text-sm text-slate-500 font-medium">Fasilitas Aktif (Wahana)</p>
                <h3 className="text-3xl font-black text-slate-800">
-                  {new Set(onlineDoctors.map(d => d.wahana)).size}
+                  {new Set(activeDoctors.map(d => d.wahana)).size}
                </h3>
              </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden">
              <p className="text-xs text-slate-400 font-medium mb-1">Status Sinkronisasi Sistem</p>
-             <div className="flex items-center">
+             <div className="flex items-center z-10">
                <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse mr-2"></div>
-               <span className="text-sm font-bold text-green-600">Database Real-time Terhubung</span>
+               <span className="text-sm font-bold text-green-600">Terhubung & Tersinkron</span>
              </div>
-             <p className="text-xs text-slate-500 mt-2 italic">Data diperbarui otomatis jika ada dokter masuk/keluar.</p>
+             <p className="text-xs text-slate-500 mt-2 italic z-10">Akurasi Heartbeat: 30 Detik. Ghost Session akan dihapus otomatis.</p>
           </div>
         </div>
 
@@ -1182,17 +1244,17 @@ function AdminDashboard({ onBack, user }) {
                  <tr>
                    <th className="px-6 py-4">Nama Dokter</th>
                    <th className="px-6 py-4">Penempatan Wahana (RS)</th>
-                   <th className="px-6 py-4">Waktu Akses</th>
+                   <th className="px-6 py-4">Masuk Sejak</th>
                    <th className="px-6 py-4 text-center">Status</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-slate-100">
                  {loading ? (
                    <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-400"><Loader2 className="animate-spin mx-auto mb-2" size={24}/> Memuat data...</td></tr>
-                 ) : onlineDoctors.length === 0 ? (
+                 ) : activeDoctors.length === 0 ? (
                    <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-500 font-medium">Tidak ada dokter yang sedang menggunakan generator saat ini.</td></tr>
                  ) : (
-                   onlineDoctors.map((doc) => (
+                   activeDoctors.map((doc) => (
                      <tr key={doc.id} className="hover:bg-slate-50 transition">
                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center">
                           <User size={16} className="mr-2 text-slate-400"/> {doc.nama}
@@ -1203,7 +1265,7 @@ function AdminDashboard({ onBack, user }) {
                        </td>
                        <td className="px-6 py-4 text-center">
                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                           <span className="h-1.5 w-1.5 bg-green-500 rounded-full mr-1.5"></span> Aktif
+                           <span className="h-1.5 w-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span> Aktif
                          </span>
                        </td>
                      </tr>
