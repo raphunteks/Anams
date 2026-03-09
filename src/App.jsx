@@ -603,7 +603,7 @@ function LandingPage({ onStart, onGoAdmin }) {
       setMatchedDoc(found);
     } else {
       setIsValidated(false);
-      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai Spreadsheet.");
+      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai.");
     }
   };
 
@@ -624,17 +624,17 @@ function LandingPage({ onStart, onGoAdmin }) {
         </button>
       </nav>
 
-      <main className="flex-grow flex flex-col items-center justify-center px-6 py-10 text-center bg-gradient-to-b from-blue-50/50 to-white">
+      <main className="flex-grow flex flex-col items-center justify-center px-4 sm:px-6 py-10 text-center bg-gradient-to-b from-blue-50/50 to-white">
         <div className="max-w-2xl w-full">
           <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-4">
             Portal Rekam Medis <br/>
             <span className="text-blue-600">Terintegrasi Database</span>
           </h1>
-          <p className="text-slate-600 mb-8 max-w-lg mx-auto">
+          <p className="text-slate-600 mb-8 max-w-lg mx-auto px-4">
             Lakukan verifikasi identitas (Provinsi, Wahana, & Nama) sesuai data Spreadsheet pusat untuk mengakses Generator SOAP.
           </p>
           
-          <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 text-left max-w-lg mx-auto relative overflow-hidden">
+          <div className="bg-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 text-left max-w-lg mx-auto relative overflow-hidden">
             <h2 className="text-xl font-bold text-slate-800 flex items-center mb-6 border-b border-slate-100 pb-4">
                <UserCheck className="mr-2 text-blue-600" size={24} /> Identifikasi Dokter
             </h2>
@@ -871,48 +871,48 @@ Fasilitas: ${doctorData.wahana}
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between shrink-0 shadow-sm z-30 gap-3 sm:gap-0">
-        <div className="flex items-center space-x-3">
-           <div className="relative h-8 w-8 overflow-hidden rounded bg-blue-50 flex items-center justify-center border border-blue-100">
+    <div className="flex flex-col min-h-screen md:h-screen bg-slate-50">
+      <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-row items-center justify-between shrink-0 shadow-sm z-30">
+        <div className="flex items-center space-x-2 sm:space-x-3 overflow-hidden">
+           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-blue-50 flex items-center justify-center border border-blue-100">
              <img src="/logo-axaiship.png" alt="Axa Logo" className="object-cover h-full w-full" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}/>
              <Activity className="hidden text-blue-600" size={18} />
           </div>
-          <div>
-            <h1 className="text-base font-bold text-slate-800 leading-tight">PIDGI ISHIP</h1>
-            <p className="text-xs font-medium text-slate-500 flex items-center"><User size={10} className="mr-1"/> {doctorData.nama} — {doctorData.wahana}</p>
+          <div className="min-w-0">
+            <h1 className="text-sm sm:text-base font-bold text-slate-800 leading-tight truncate">PIDGI ISHIP</h1>
+            <p className="text-[10px] sm:text-xs font-medium text-slate-500 flex items-center truncate"><User size={10} className="mr-1 shrink-0"/> <span className="truncate">{doctorData.nama} — {doctorData.wahana}</span></p>
           </div>
         </div>
-        <button onClick={onBack} className="text-xs font-medium text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-4 py-2 rounded-lg transition self-start sm:self-auto flex items-center">
-          <LogOut size={14} className="mr-1"/> Keluar (Logout)
+        <button onClick={onBack} className="text-[10px] sm:text-xs font-medium text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-3 sm:px-4 py-2 rounded-lg transition shrink-0 flex items-center ml-2">
+          <LogOut size={14} className="sm:mr-1"/> <span className="hidden sm:inline">Keluar</span>
         </button>
       </header>
 
-      <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-grow flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
         {/* PANEL KIRI */}
-        <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col overflow-y-auto shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-5 flex items-center border-b border-slate-100 pb-3">
+        <div className="w-full md:w-[450px] bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col md:overflow-y-auto shrink-0 z-10 shadow-sm">
+          <div className="p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-4 sm:mb-5 flex items-center border-b border-slate-100 pb-3">
               <ShieldPlus className="mr-2 text-blue-600" size={24}/> Input Data Klinis
             </h2>
             {/* Identitas */}
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">Nama Pasien</label>
+                <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Nama Pasien</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><User size={16} className="text-slate-400" /></div>
-                  <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder="Contoh: Tn. Budi" className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"/>
+                  <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder="Contoh: Tn. Budi" className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-xs sm:text-sm"/>
                 </div>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex space-x-3 sm:space-x-4">
                 <div className="w-1/2">
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Usia</label>
-                  <input type="text" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} placeholder="Ex: 24 Tahun" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"/>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Usia</label>
+                  <input type="text" value={patientAge} onChange={(e) => setPatientAge(e.target.value)} placeholder="Ex: 24 Tahun" className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-xs sm:text-sm"/>
                 </div>
                 <div className="w-1/2">
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Jenis Kelamin</label>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Jenis Kelamin</label>
                   <div className="relative">
-                    <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm appearance-none cursor-pointer">
+                    <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-xs sm:text-sm appearance-none cursor-pointer">
                       <option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option>
                     </select>
                     <ChevronDown size={14} className="absolute inset-y-0 right-3 my-auto text-slate-400 pointer-events-none" />
@@ -920,20 +920,20 @@ Fasilitas: ${doctorData.wahana}
                 </div>
               </div>
               <div>
-                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Elemen / Gigi</label>
+                 <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Elemen / Gigi</label>
                  <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Hash size={16} className="text-slate-400" /></div>
-                    <input type="text" value={toothNum} onChange={(e) => setToothNum(e.target.value)} placeholder="Ex: 16" className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm font-medium text-blue-700"/>
+                    <input type="text" value={toothNum} onChange={(e) => setToothNum(e.target.value)} placeholder="Ex: 16" className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-xs sm:text-sm font-medium text-blue-700"/>
                  </div>
               </div>
             </div>
             <div className="w-full h-px bg-slate-200 mb-5"></div>
             {/* ICD Dropdown */}
             <div className="relative mb-5" ref={wrapperRef}>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">Kode ICD-10 <span className="text-red-500">*</span></label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Kode ICD-10 <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search size={18} className="text-blue-500" /></div>
-                <input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsDropdownOpen(true); if(e.target.value === '') setSelectedDisease(null); }} onFocus={() => setIsDropdownOpen(true)} placeholder="Ketik K02, K04, K00..." className="w-full pl-10 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none font-semibold text-slate-800 transition shadow-sm"/>
+                <input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsDropdownOpen(true); if(e.target.value === '') setSelectedDisease(null); }} onFocus={() => setIsDropdownOpen(true)} placeholder="Ketik K02, K04, K00..." className="w-full pl-10 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none font-semibold text-slate-800 transition shadow-sm text-sm"/>
                 {searchQuery && (<button onClick={() => { setSearchQuery(''); setSelectedDisease(null); setIsDropdownOpen(false); }} className="absolute inset-y-0 right-8 pr-1 flex items-center text-slate-400 hover:text-red-500 transition"><X size={18} /></button>)}
                 <ChevronDown size={18} className="absolute inset-y-0 right-3 my-auto text-slate-400 pointer-events-none" />
               </div>
@@ -941,7 +941,7 @@ Fasilitas: ${doctorData.wahana}
                 <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto py-1">
                   {filteredData.length > 0 ? filteredData.map((item, index) => (
                       <div key={index} onClick={() => handleSelectICD(item)} className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition">
-                        <div className="font-bold text-blue-700 text-sm">{item.code}</div><div className="text-xs text-slate-600 mt-0.5 leading-snug">{item.name}</div>
+                        <div className="font-bold text-blue-700 text-sm">{item.code}</div><div className="text-[11px] sm:text-xs text-slate-600 mt-0.5 leading-snug">{item.name}</div>
                       </div>
                     )) : (<div className="px-4 py-6 text-sm text-slate-500 text-center">Data tidak ditemukan</div>)}
                 </div>
@@ -949,9 +949,9 @@ Fasilitas: ${doctorData.wahana}
             </div>
             {/* Tatalaksana */}
             <div className="mb-5 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
-              <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center"><Syringe size={16} className="mr-2 text-indigo-500"/>Tatalaksana Akhir</label>
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 flex items-center"><Syringe size={16} className="mr-2 text-indigo-500"/>Tatalaksana Akhir</label>
               <div className="relative">
-                <select value={selectedProcedure} onChange={(e) => setSelectedProcedure(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none cursor-pointer shadow-sm">
+                <select value={selectedProcedure} onChange={(e) => setSelectedProcedure(e.target.value)} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition text-xs sm:text-sm font-medium text-slate-700 appearance-none cursor-pointer shadow-sm">
                   <option value="Bawaan ICD-10 (Default)">- Sesuai Bawaan ICD-10 (Default) -</option>
                   {Object.keys(proceduresData).map((procName, idx) => (<option key={idx} value={procName}>{procName}</option>))}
                 </select>
@@ -960,8 +960,8 @@ Fasilitas: ${doctorData.wahana}
             </div>
             {/* Resep Obat Multi-select */}
             <div className="relative mb-6" ref={medWrapperRef}>
-              <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center"><Pill size={16} className="mr-2 text-emerald-500"/>Resep Obat</label>
-              <div onClick={() => setIsMedDropdownOpen(!isMedDropdownOpen)} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg outline-none transition text-sm cursor-pointer shadow-sm flex items-center justify-between hover:border-emerald-400">
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-2 flex items-center"><Pill size={16} className="mr-2 text-emerald-500"/>Resep Obat</label>
+              <div onClick={() => setIsMedDropdownOpen(!isMedDropdownOpen)} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg outline-none transition text-xs sm:text-sm cursor-pointer shadow-sm flex items-center justify-between hover:border-emerald-400">
                 <span className={selectedMeds.length > 0 ? "text-slate-800 font-medium" : "text-slate-400"}>{selectedMeds.length > 0 ? `${selectedMeds.length} obat dipilih...` : 'Pilih Obat (Bisa lebih dari 1)'}</span>
                 <ChevronDown size={16} className="text-slate-500" />
               </div>
@@ -972,7 +972,7 @@ Fasilitas: ${doctorData.wahana}
                     {filteredMeds.length > 0 ? filteredMeds.map((med, idx) => (
                         <label key={idx} className="flex items-start px-3 py-2 hover:bg-emerald-50 cursor-pointer">
                           <input type="checkbox" className="mt-1 rounded text-emerald-500" checked={selectedMeds.includes(med)} onChange={() => toggleMedication(med)}/>
-                          <span className="ml-2 text-xs text-slate-700 leading-snug">{med}</span>
+                          <span className="ml-2 text-[11px] sm:text-xs text-slate-700 leading-snug">{med}</span>
                         </label>
                       )) : (<div className="px-4 py-4 text-xs text-slate-500 text-center">Obat tidak ditemukan</div>)}
                   </div>
@@ -981,7 +981,7 @@ Fasilitas: ${doctorData.wahana}
               {selectedMeds.length > 0 && (
                 <div className="mt-3 flex flex-col gap-2">
                   {selectedMeds.map((med, idx) => (
-                    <div key={idx} className="inline-flex items-start justify-between bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-medium">
+                    <div key={idx} className="inline-flex items-start justify-between bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-medium">
                       <span className="break-words pr-2 leading-relaxed">{med}</span>
                       <button onClick={() => removeMedication(med)} className="text-emerald-500 hover:text-red-500 shrink-0 mt-0.5"><Trash2 size={14} /></button>
                     </div>
@@ -993,82 +993,86 @@ Fasilitas: ${doctorData.wahana}
         </div>
 
         {/* PANEL KANAN */}
-        <div className="flex-grow bg-[#f3f4f6] p-4 md:p-8 flex flex-col overflow-y-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <h2 className="text-xl font-bold text-slate-800">Kertas Kerja SOAP</h2>
-            <button onClick={copyToClipboard} disabled={!selectedDisease} className={`flex items-center justify-center px-5 py-2.5 rounded-xl font-bold text-sm transition shadow-sm ${!selectedDisease ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : copied ? 'bg-green-500 text-white shadow-green-200 scale-95' : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'}`}>
-              {copied ? (<><Check size={18} className="mr-2" /> Teks Tersalin!</>) : (<><Copy size={18} className="mr-2" /> Salin Format E-RM</>)}
+        <div className="flex-grow bg-[#f3f4f6] p-4 sm:p-6 md:p-8 flex flex-col md:overflow-y-auto">
+          <div className="flex flex-row items-center justify-between gap-2 sm:gap-4 mb-4">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-800">Kertas Kerja SOAP</h2>
+            <button onClick={copyToClipboard} disabled={!selectedDisease} className={`flex items-center justify-center px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition shadow-sm whitespace-nowrap ${!selectedDisease ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : copied ? 'bg-green-500 text-white shadow-green-200 scale-95' : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md'}`}>
+              {copied ? (<><Check size={16} className="mr-1 sm:mr-2" /> Tersalin!</>) : (<><Copy size={16} className="mr-1 sm:mr-2" /> Salin Teks</>)}
             </button>
           </div>
 
-          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl flex-grow p-6 md:p-10 text-slate-800 font-serif leading-relaxed overflow-y-auto relative">
+          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl flex-grow p-4 sm:p-6 md:p-10 text-slate-800 font-serif leading-relaxed overflow-x-hidden break-words relative">
             {!selectedDisease ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
-                <FileText size={72} className="mb-4 opacity-30 text-slate-500" />
-                <p className="text-lg font-medium text-slate-500">Kertas kerja SOAP belum diisi</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 p-6 text-center">
+                <FileText size={64} className="mb-4 opacity-30 text-slate-500 sm:w-16 sm:h-16 w-12 h-12" />
+                <p className="text-base sm:text-lg font-medium text-slate-500">Kertas kerja SOAP belum diisi</p>
+                <p className="text-xs sm:text-sm mt-2 text-slate-400">Pilih diagnosis ICD-10 di panel sebelah kiri untuk memunculkan format.</p>
               </div>
             ) : (
-              <div className="space-y-6 max-w-3xl mx-auto">
-                <div className="border-b-2 border-slate-100 pb-4 mb-6">
-                  <table className="w-full text-sm font-sans">
+              <div className="space-y-4 sm:space-y-6 max-w-3xl mx-auto w-full">
+                <div className="border-b-2 border-slate-100 pb-3 sm:pb-4 mb-4 sm:mb-6 overflow-hidden">
+                  <table className="w-full text-sm font-sans table-fixed break-words">
                     <tbody>
-                      <tr><td className="w-32 font-bold py-1 text-slate-500 uppercase tracking-wider text-xs">Nama Pasien</td><td className="w-4">:</td><td className="font-semibold text-base">{patientName || '-'}</td></tr>
-                      <tr><td className="font-bold py-1 text-slate-500 uppercase tracking-wider text-xs">Usia / Gender</td><td>:</td><td className="font-semibold text-base">{patientAge ? `${patientAge}, ` : ''} {gender}</td></tr>
+                      <tr><td className="w-[35%] sm:w-32 font-bold py-1 text-slate-500 uppercase tracking-wider text-[10px] sm:text-xs align-top">Nama Pasien</td><td className="w-4 align-top">:</td><td className="font-semibold text-sm sm:text-base align-top">{patientName || '-'}</td></tr>
+                      <tr><td className="font-bold py-1 text-slate-500 uppercase tracking-wider text-[10px] sm:text-xs align-top">Usia / Gender</td><td className="align-top">:</td><td className="font-semibold text-sm sm:text-base align-top">{patientAge ? `${patientAge}, ` : ''} {gender}</td></tr>
                       <tr>
-                        <td className="font-bold py-1 text-slate-500 uppercase tracking-wider text-xs">Elemen Gigi</td><td>:</td>
-                        <td><span className="inline-flex items-center justify-center bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold text-sm">{toothNum || '-'}</span><span className="text-xs text-slate-500 ml-2 font-normal italic">({getToothLocation(toothNum)})</span></td>
+                        <td className="font-bold py-1 text-slate-500 uppercase tracking-wider text-[10px] sm:text-xs align-top">Elemen Gigi</td><td className="align-top">:</td>
+                        <td className="align-top flex flex-col sm:flex-row sm:items-center items-start">
+                           <span className="inline-flex items-center justify-center bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold text-xs sm:text-sm mb-1 sm:mb-0">{toothNum || '-'}</span>
+                           <span className="text-[10px] sm:text-xs text-slate-500 sm:ml-2 font-normal italic leading-tight">({getToothLocation(toothNum)})</span>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 border-l-4 border-blue-500 pl-3 mb-3 bg-slate-50 py-1 rounded-r-lg">[S] SUBJEKTIF (ANAMNESIS)</h3>
-                  <p className="pl-4 whitespace-pre-line text-justify text-[15px]">{parseAnamnesis(selectedDisease.anamnesis, gender, toothNum)}</p>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 border-l-4 border-blue-500 pl-2 sm:pl-3 mb-2 sm:mb-3 bg-slate-50 py-1 rounded-r-lg">[S] SUBJEKTIF (ANAMNESIS)</h3>
+                  <p className="pl-2 sm:pl-4 whitespace-pre-line text-justify text-[14px] sm:text-[15px] break-words">{parseAnamnesis(selectedDisease.anamnesis, gender, toothNum)}</p>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 border-l-4 border-blue-500 pl-3 mb-3 bg-slate-50 py-1 rounded-r-lg">[O] OBJEKTIF (PEMERIKSAAN FISIK)</h3>
-                  <div className="pl-4 space-y-3 text-[15px]">
-                    <div><strong className="text-slate-900 block mb-1">Ekstra Oral:</strong><p className="text-justify">{selectedDisease.ekstraOral}</p></div>
-                    <div><strong className="text-slate-900 block mb-1">Intra Oral:</strong><p className="whitespace-pre-line text-justify">{selectedDisease.intraOral}</p></div>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 border-l-4 border-blue-500 pl-2 sm:pl-3 mb-2 sm:mb-3 bg-slate-50 py-1 rounded-r-lg">[O] OBJEKTIF (PEMERIKSAAN FISIK)</h3>
+                  <div className="pl-2 sm:pl-4 space-y-2 sm:space-y-3 text-[14px] sm:text-[15px] break-words">
+                    <div><strong className="text-slate-900 block mb-0.5 sm:mb-1">Ekstra Oral:</strong><p className="text-justify">{selectedDisease.ekstraOral}</p></div>
+                    <div><strong className="text-slate-900 block mb-0.5 sm:mb-1">Intra Oral:</strong><p className="whitespace-pre-line text-justify">{selectedDisease.intraOral}</p></div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 border-l-4 border-blue-500 pl-3 mb-3 bg-slate-50 py-1 rounded-r-lg">[A] ASSESMENT (DIAGNOSIS)</h3>
-                  <div className="pl-4 space-y-2 text-[15px]">
-                    <p><strong className="text-slate-900">Diagnosis Kerja:</strong> <br/><span className="inline-block font-bold text-blue-800 bg-blue-50 border border-blue-100 px-3 py-1 rounded mt-1">{selectedDisease.diagnosis}</span></p>
-                    <p className="mt-3"><strong className="text-slate-900">Diagnosis Banding:</strong> <br/>{selectedDisease.dd}</p>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 border-l-4 border-blue-500 pl-2 sm:pl-3 mb-2 sm:mb-3 bg-slate-50 py-1 rounded-r-lg">[A] ASSESMENT (DIAGNOSIS)</h3>
+                  <div className="pl-2 sm:pl-4 space-y-1 sm:space-y-2 text-[14px] sm:text-[15px] break-words">
+                    <p><strong className="text-slate-900">Diagnosis Kerja:</strong> <br className="sm:hidden"/><span className="inline-block font-bold text-blue-800 bg-blue-50 border border-blue-100 px-2 sm:px-3 py-1 rounded mt-1">{selectedDisease.diagnosis}</span></p>
+                    <p className="mt-2 sm:mt-3"><strong className="text-slate-900">Diagnosis Banding:</strong> <br className="sm:hidden"/>{selectedDisease.dd}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-lg text-slate-900 border-l-4 border-blue-500 pl-3 mb-3 bg-slate-50 py-1 rounded-r-lg">[P] PLAN (TATALAKSANA)</h3>
+                  <h3 className="font-bold text-base sm:text-lg text-slate-900 border-l-4 border-blue-500 pl-2 sm:pl-3 mb-2 sm:mb-3 bg-slate-50 py-1 rounded-r-lg">[P] PLAN (TATALAKSANA)</h3>
                   {selectedProcedure !== 'Bawaan ICD-10 (Default)' ? (
-                    <div className="pl-4 space-y-4">
-                      <div><strong className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[15px]">Tindakan Terpilih: {selectedProcedure}</strong></div>
-                      <div><strong className="text-slate-900 block mb-1">Tatalaksana:</strong><p className="whitespace-pre-line text-[15px] leading-relaxed text-justify">{proceduresData[selectedProcedure].tatalaksana}</p></div>
-                      <div><strong className="text-slate-900 block mb-1">KIE (Komunikasi, Informasi, Edukasi):</strong><p className="whitespace-pre-line text-[15px] leading-relaxed text-justify">{proceduresData[selectedProcedure].kie}</p></div>
+                    <div className="pl-2 sm:pl-4 space-y-3 sm:space-y-4 break-words">
+                      <div><strong className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-[13px] sm:text-[15px]">Tindakan Terpilih: {selectedProcedure}</strong></div>
+                      <div><strong className="text-slate-900 block mb-0.5 sm:mb-1">Tatalaksana:</strong><p className="whitespace-pre-line text-[14px] sm:text-[15px] leading-relaxed text-justify">{proceduresData[selectedProcedure].tatalaksana}</p></div>
+                      <div><strong className="text-slate-900 block mb-0.5 sm:mb-1">KIE (Komunikasi, Informasi, Edukasi):</strong><p className="whitespace-pre-line text-[14px] sm:text-[15px] leading-relaxed text-justify">{proceduresData[selectedProcedure].kie}</p></div>
                     </div>
-                  ) : (<p className="pl-4 whitespace-pre-line text-[15px] leading-relaxed text-justify">{selectedDisease.tatalaksana}</p>)}
+                  ) : (<p className="pl-2 sm:pl-4 whitespace-pre-line text-[14px] sm:text-[15px] leading-relaxed text-justify break-words">{selectedDisease.tatalaksana}</p>)}
                   
                   {selectedMeds.length > 0 && (
-                    <div className="pl-4 mt-6">
-                      <strong className="text-emerald-700 block mb-2 border-b border-emerald-100 pb-1">Resep Obat / Medikamen:</strong>
-                      <div className="space-y-1 mt-3">
-                        {selectedMeds.map((med, idx) => (<p key={idx} className="text-[15px] leading-relaxed italic text-slate-800">- {med}</p>))}
+                    <div className="pl-2 sm:pl-4 mt-4 sm:mt-6 break-words">
+                      <strong className="text-emerald-700 block mb-1 sm:mb-2 border-b border-emerald-100 pb-1 text-sm sm:text-base">Resep Obat / Medikamen:</strong>
+                      <div className="space-y-1 mt-2 sm:mt-3">
+                        {selectedMeds.map((med, idx) => (<p key={idx} className="text-[13px] sm:text-[15px] leading-relaxed italic text-slate-800">- {med}</p>))}
                       </div>
                     </div>
                   )}
                 </div>
                 
                 {/* Tanda Tangan Digital Nama Dokter */}
-                <div className="mt-8 pt-6 border-t-2 border-slate-100 flex justify-end">
-                   <div className="text-center font-sans">
-                      <p className="text-sm text-slate-500 mb-6">Penanggung Jawab,</p>
-                      <p className="font-bold text-slate-800 border-b border-slate-300 pb-1">{doctorData.nama}</p>
-                      <p className="text-xs text-slate-500 mt-1">{doctorData.wahana}</p>
+                <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t-2 border-slate-100 flex justify-end">
+                   <div className="text-right font-sans max-w-[200px] sm:max-w-xs">
+                      <p className="text-xs sm:text-sm text-slate-500 mb-4 sm:mb-6">Penanggung Jawab,</p>
+                      <p className="font-bold text-slate-800 border-b border-slate-300 pb-1 text-sm sm:text-base truncate" title={doctorData.nama}>{doctorData.nama}</p>
+                      <p className="text-[10px] sm:text-xs text-slate-500 mt-1 truncate" title={doctorData.wahana}>{doctorData.wahana}</p>
                    </div>
                 </div>
 
@@ -1108,31 +1112,31 @@ function AdminLogin({ onLoginSuccess, onBack }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-900 justify-center items-center px-4">
-       <button onClick={onBack} className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center">
-          <ArrowRight className="mr-2 rotate-180" size={16} /> Kembali ke Publik
+       <button onClick={onBack} className="absolute top-4 left-4 sm:top-6 sm:left-6 text-slate-400 hover:text-white transition flex items-center text-sm sm:text-base">
+          <ArrowRight className="mr-1 sm:mr-2 rotate-180" size={16} /> Kembali
        </button>
-       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full">
+       <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-sm w-full">
          <div className="flex justify-center mb-6">
-            <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-              <Lock size={32} />
+            <div className="h-14 w-14 sm:h-16 sm:w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+              <Lock size={28} className="sm:w-8 sm:h-8" />
             </div>
          </div>
-         <h2 className="text-2xl font-extrabold text-center text-slate-800 mb-2">Admin Area</h2>
-         <p className="text-center text-slate-500 text-sm mb-8">Login untuk memantau aktivitas dokter gigi di Wahana ISHIP.</p>
+         <h2 className="text-xl sm:text-2xl font-extrabold text-center text-slate-800 mb-2">Admin Area</h2>
+         <p className="text-center text-slate-500 text-xs sm:text-sm mb-6 sm:mb-8">Login untuk memantau aktivitas dokter gigi.</p>
 
-         <form onSubmit={handleLogin} className="space-y-5">
+         <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
            <div>
-             <label className="block text-sm font-bold text-slate-700 mb-1.5">Username</label>
-             <input type="text" value={username} onChange={(e)=>setUsername(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition"/>
+             <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Username</label>
+             <input type="text" value={username} onChange={(e)=>setUsername(e.target.value)} className="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition text-sm"/>
            </div>
            <div>
-             <label className="block text-sm font-bold text-slate-700 mb-1.5">Password</label>
-             <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition"/>
+             <label className="block text-xs sm:text-sm font-bold text-slate-700 mb-1.5">Password</label>
+             <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full px-4 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition text-sm"/>
            </div>
            
-           {error && <p className="text-sm text-red-500 text-center font-medium">Username atau Password salah!</p>}
+           {error && <p className="text-xs sm:text-sm text-red-500 text-center font-medium">Username atau Password salah!</p>}
 
-           <button type="submit" className="w-full py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition shadow-lg mt-4">
+           <button type="submit" className="w-full py-3 sm:py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition shadow-lg mt-2 sm:mt-4 text-sm sm:text-base">
              Login ke Dashboard
            </button>
          </form>
@@ -1200,78 +1204,84 @@ function AdminDashboard({ onBack }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      <nav className="bg-slate-900 px-6 py-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center text-white space-x-3">
-          <Activity size={24} className="text-red-400"/>
-          <span className="text-xl font-bold">PIDGI Admin Monitor</span>
+      <nav className="bg-slate-900 px-4 sm:px-6 py-4 flex flex-row items-center justify-between shadow-md">
+        <div className="flex items-center text-white space-x-2 sm:space-x-3">
+          <Activity size={20} className="text-red-400 sm:w-6 sm:h-6"/>
+          <span className="text-sm sm:text-xl font-bold truncate">PIDGI Monitor</span>
         </div>
-        <button onClick={onBack} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition text-sm font-medium flex items-center">
-          <LogOut size={14} className="mr-1.5"/> Tutup & Logout Admin
+        <button onClick={onBack} className="px-3 sm:px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition text-[10px] sm:text-sm font-medium flex items-center shrink-0">
+          <LogOut size={12} className="mr-1.5 sm:w-3.5 sm:h-3.5"/> Tutup & Logout
         </button>
       </nav>
 
-      <main className="flex-grow p-6 md:p-10 max-w-6xl mx-auto w-full">
+      <main className="flex-grow p-4 sm:p-6 md:p-10 max-w-6xl mx-auto w-full">
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
-             <div className="h-14 w-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-4"><Users size={28}/></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
+             <div className="h-12 w-12 sm:h-14 sm:w-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-3 sm:mr-4"><Users className="w-6 h-6 sm:w-7 sm:h-7"/></div>
              <div>
-               <p className="text-sm text-slate-500 font-medium">Dokter Sedang Online</p>
-               <h3 className="text-3xl font-black text-slate-800">{onlineDoctors.length}</h3>
+               <p className="text-xs sm:text-sm text-slate-500 font-medium">Dokter Online</p>
+               <h3 className="text-2xl sm:text-3xl font-black text-slate-800">{onlineDoctors.length}</h3>
              </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
-             <div className="h-14 w-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-4"><Building size={28}/></div>
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
+             <div className="h-12 w-12 sm:h-14 sm:w-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-3 sm:mr-4"><Building className="w-6 h-6 sm:w-7 sm:h-7"/></div>
              <div>
-               <p className="text-sm text-slate-500 font-medium">Fasilitas Aktif (Wahana)</p>
-               <h3 className="text-3xl font-black text-slate-800">
+               <p className="text-xs sm:text-sm text-slate-500 font-medium">Wahana Aktif</p>
+               <h3 className="text-2xl sm:text-3xl font-black text-slate-800">
                   {new Set(onlineDoctors.map(d => d.wahana)).size}
                </h3>
              </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden">
-             <p className="text-xs text-slate-400 font-medium mb-1">Status Sinkronisasi Sistem</p>
+          <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden sm:col-span-2 md:col-span-1">
+             <p className="text-[10px] sm:text-xs text-slate-400 font-medium mb-1">Sistem KV Terhubung</p>
              <div className="flex items-center z-10">
-               <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse mr-2"></div>
-               <span className="text-sm font-bold text-green-600">Database Real-time Terhubung</span>
+               <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 bg-green-500 rounded-full animate-pulse mr-2"></div>
+               <span className="text-xs sm:text-sm font-bold text-green-600">Sinkronisasi Real-time</span>
              </div>
-             <p className="text-xs text-slate-500 mt-2 italic z-10">Akurasi Live: 10 Detik. Ghost Session terhapus dalam 60 Detik.</p>
+             <p className="text-[10px] sm:text-xs text-slate-500 mt-2 italic z-10">Live 10s. Ghost Session dihapus dalam 60s.</p>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-             <h3 className="text-lg font-bold text-slate-800 flex items-center"><Activity size={18} className="mr-2 text-red-500"/> Log Aktivitas Dokter ISHIP</h3>
+           <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+             <h3 className="text-sm sm:text-lg font-bold text-slate-800 flex items-center"><Activity size={16} className="mr-2 text-red-500 sm:w-[18px] sm:h-[18px]"/> Log Aktivitas</h3>
            </div>
            
            <div className="overflow-x-auto">
-             <table className="w-full text-left text-sm">
+             <table className="w-full text-left text-xs sm:text-sm whitespace-nowrap sm:whitespace-normal">
                <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                  <tr>
-                   <th className="px-6 py-4">Nama Dokter</th>
-                   <th className="px-6 py-4">Penempatan Wahana (RS)</th>
-                   <th className="px-6 py-4">Masuk Sejak</th>
-                   <th className="px-6 py-4 text-center">Status</th>
+                   <th className="px-4 sm:px-6 py-3 sm:py-4">Nama Dokter</th>
+                   <th className="px-4 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">Wahana</th>
+                   <th className="px-4 sm:px-6 py-3 sm:py-4">Masuk</th>
+                   <th className="px-4 sm:px-6 py-3 sm:py-4 text-center">Status</th>
                  </tr>
                </thead>
                <tbody className="divide-y divide-slate-100">
                  {loading ? (
-                   <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-400"><Loader2 className="animate-spin mx-auto mb-2" size={24}/> Memuat data...</td></tr>
+                   <tr><td colSpan="4" className="px-4 sm:px-6 py-8 sm:py-10 text-center text-slate-400"><Loader2 className="animate-spin mx-auto mb-2" size={20}/> Memuat data...</td></tr>
                  ) : onlineDoctors.length === 0 ? (
-                   <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-500 font-medium">Tidak ada dokter yang sedang menggunakan generator saat ini.</td></tr>
+                   <tr><td colSpan="4" className="px-4 sm:px-6 py-8 sm:py-10 text-center text-slate-500 font-medium">Tidak ada dokter yang online.</td></tr>
                  ) : (
                    onlineDoctors.map((doc, i) => (
                      <tr key={i} className="hover:bg-slate-50 transition">
-                       <td className="px-6 py-4 font-bold text-slate-800 flex items-center">
-                          <User size={16} className="mr-2 text-slate-400"/> {doc.nama}
+                       <td className="px-4 sm:px-6 py-3 sm:py-4 font-bold text-slate-800">
+                          <div className="flex items-center">
+                            <User size={14} className="mr-1.5 sm:mr-2 text-slate-400 shrink-0"/> 
+                            <span className="truncate max-w-[120px] sm:max-w-none">{doc.nama}</span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-normal mt-0.5 sm:hidden truncate max-w-[150px]">{doc.wahana}</div>
                        </td>
-                       <td className="px-6 py-4 text-slate-600">{doc.wahana}</td>
-                       <td className="px-6 py-4 text-slate-500 flex items-center">
-                          <Clock size={14} className="mr-1.5"/> {formatTime(doc.loginTime)}
+                       <td className="px-4 sm:px-6 py-3 sm:py-4 text-slate-600 hidden sm:table-cell">{doc.wahana}</td>
+                       <td className="px-4 sm:px-6 py-3 sm:py-4 text-slate-500">
+                          <div className="flex items-center">
+                            <Clock size={12} className="mr-1 sm:mr-1.5 shrink-0"/> {formatTime(doc.loginTime)}
+                          </div>
                        </td>
-                       <td className="px-6 py-4 text-center">
-                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                           <span className="h-1.5 w-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span> Aktif
+                       <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
+                         <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold bg-green-100 text-green-700">
+                           <span className="h-1.5 w-1.5 bg-green-500 rounded-full mr-1 sm:mr-1.5 animate-pulse"></span> Aktif
                          </span>
                        </td>
                      </tr>
