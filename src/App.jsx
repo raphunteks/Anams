@@ -1,12 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Stethoscope, FileText, Copy, Check, Activity, ShieldPlus, ArrowRight, User, Hash, X, Syringe, Pill, Trash2, UserCheck, MapPin, Building, ShieldAlert, ShieldCheck, Loader2 } from 'lucide-react';
+import { Search, ChevronDown, Stethoscope, FileText, Copy, Check, Activity, ShieldPlus, ArrowRight, User, Hash, X, Syringe, Pill, Trash2, UserCheck, MapPin, Building, ShieldAlert, ShieldCheck, Loader2, Lock, Users, LogOut, Clock } from 'lucide-react';
+
+// === FIREBASE STORAGE INIT (UNTUK FITUR ONLINE DOCTORS) ===
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'axa-iship-app';
+const fbConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+let db = null;
+let auth = null;
+
+if (fbConfigStr) {
+  try {
+    const firebaseConfig = JSON.parse(fbConfigStr);
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (e) {
+    console.error("Firebase init error", e);
+  }
+}
 
 // ==========================================
 // PENGATURAN LINK GOOGLE SPREADSHEET (MASTER)
 // ==========================================
 const SPREADSHEET_ID = '1ogK4p7iPRArwRxPxulxmyEumiDMocRs7'; 
 
-// Database 25 Provinsi beserta GID Masing-masing
 const PROVINCES_DATA = [
   { name: "Provinsi Aceh", gid: "92326464" },
   { name: "Provinsi Sumatera Utara", gid: "230992032" },
@@ -37,7 +57,7 @@ const PROVINCES_DATA = [
 ];
 
 // ==========================================
-// DATA OBAT / MEDIKAMEN (Diurutkan A-Z)
+// DATA OBAT / MEDIKAMEN
 // ==========================================
 const medicationsList = [
   "R / Acyclovir 5% gel tube No. I S 6 dd 1 lit.or",
@@ -71,9 +91,6 @@ const medicationsList = [
   "R / Paracetamol syrup No. I S 3 dd 1 pc"
 ];
 
-// ==========================================
-// DATA TINDAKAN & KIE
-// ==========================================
 const proceduresData = {
   "Ekstraksi Gigi Permanen": {
     tatalaksana: "1. Melakukan anamnesis\n2. Melakukan pemeriksaan ekstraoral dan intraoral\n3. Melakukan informed consent\n4. Mempersiapkan alat dan bahan\n5. Operator menggunakan APD\n6. Operator mengatur posisi pasien semi supine & pasien di instruksikan untuk berkumur terlebih dahulu\n7. Asepsis pada daerah kerja dengan tampon yang diaplikasikan povidon iodine\n8. Melakukan anastesi lokal pada area gigi yang ingin di kerja dengan teknik intraligament\n9. Melepaskan perlekatan jaringan lunak dengan excavator\n10. Menggerakkan gigi menggunakan bein hingga gigi terkeluar dari soket\n11. Melakukan kuretase pada soket untuk membersikan bekas jaringan granulasi & memastikan tidak ada fragmen yang tersisa dengan excavator\n12. Melakukan irigasi dengan larutan saline pada soket bekas pencabutan\n13. Menggigit tampon yang telah diaplikasikan dengan povidone iodine\n14. Pemberian obat/medikamen",
@@ -101,33 +118,22 @@ const proceduresData = {
   }
 };
 
-// ==========================================
-// FUNGSI SMART LOCATION GIGI
-// ==========================================
 function getToothLocation(toothStr) {
   if (!toothStr) return "gigi tersebut";
   const match = toothStr.match(/\d{2}/);
   if (!match) return `gigi ${toothStr}`;
-  
   const firstTooth = match[0];
   const quad = firstTooth.charAt(0);
   const pos = parseInt(firstTooth.charAt(1));
-  
   if(isNaN(pos)) return "gigi tersebut";
-
-  let rahang = "";
-  let regio = "";
-  let posisi = "";
-
+  let rahang = "", regio = "", posisi = "";
   if (['1', '5'].includes(quad)) { rahang = "rahang atas"; regio = "kanan"; }
   else if (['2', '6'].includes(quad)) { rahang = "rahang atas"; regio = "kiri"; }
   else if (['3', '7'].includes(quad)) { rahang = "rahang bawah"; regio = "kiri"; }
   else if (['4', '8'].includes(quad)) { rahang = "rahang bawah"; regio = "kanan"; }
   else return `gigi ${toothStr}`;
-
   if (pos >= 1 && pos <= 3) { posisi = "depan"; }
   else if (pos >= 4 && pos <= 8) { posisi = "belakang"; }
-
   return `gigi ${posisi} ${regio} ${rahang}`;
 }
 
@@ -137,12 +143,7 @@ function parseAnamnesis(template, gender, toothNum) {
     return template.replace(/{{GENDER}}/g, p_gender).replace(/{{TOOTH_LOCATION}}/g, p_loc);
 }
 
-
-// ==========================================
-// DATABASE DIAGNOSIS KEDOKTERAN GIGI
-// ==========================================
 const dentalDatabase = [
-  // --- K02 ---
   {
     code: "K02.0",
     name: "Caries limited to enamel",
@@ -174,48 +175,6 @@ const dentalDatabase = [
     tatalaksana: "1. KIE teknik menyikat gigi dengan bulu sikat halus.\n2. Pembersihan kavitas dengan bur atau ekskavator.\n3. Restorasi menggunakan Glass Ionomer Cement (GIC)."
   },
   {
-    code: "K02.3",
-    name: "Arrested dental caries",
-    anamnesis: "{{GENDER}} tidak memiliki keluhan sakit atau ngilu. Pasien hanya menyadari adanya bercak kecoklatan atau kehitaman pada {{TOOTH_LOCATION}} yang sudah lama tidak membesar.",
-    ekstraOral: "TAK.",
-    intraOral: "Terdapat lesi karies berwarna coklat/hitam pekat. Saat diekskavasi atau di-sondase, dasar kavitas terasa keras dan licin. \n- Tes Sondase: (-) keras.\n- Tes Perkusi: (-)\n- Tes Vitalitas: (+)",
-    diagnosis: "K02.3 - Arrested dental caries (Karies Terhenti)",
-    dd: "Diskolorasi Ekstrinsik, Karies Dentin Aktif",
-    tatalaksana: "1. KIE bahwa karies telah terhenti prosesnya.\n2. Observasi berkala.\n3. Jika mengganggu estetika, dapat dilakukan restorasi estetik (Komposit) setelah preparasi minimal."
-  },
-  {
-    code: "K02.4",
-    name: "Odontoclasia",
-    anamnesis: "{{GENDER}} seringkali asimtomatik (tanpa gejala) atau mengeluhkan {{TOOTH_LOCATION}} terasa sedikit goyang atau ada noda kemerahan/pink pada mahkota gigi (pink tooth).",
-    ekstraOral: "TAK.",
-    intraOral: "Tampak defek resorpsi pada area servikal atau mahkota. Jika resorpsi internal meluas, tampak bayangan kemerahan (pink spot). \n- Perkusi: (+/-)\n- Kegoyangan: bisa derajat 1-2.\n- Rontgen: resorpsi struktur gigi internal/eksternal.",
-    diagnosis: "K02.4 - Odontoclasia (Resorpsi Internal / Eksternal Gigi)",
-    dd: "Karies Servikal Profunda",
-    tatalaksana: "1. Rujukan foto rontgen periapikal untuk observasi perluasan resorpsi.\n2. Jika resorpsi internal memengaruhi pulpa tanpa perforasi akar luar: Perawatan Saluran Akar (PSA).\n3. Jika resorpsi eksternal parah/gigi sangat goyang: Ekstraksi."
-  },
-  {
-    code: "K02.8",
-    name: "Other dental caries",
-    anamnesis: "{{GENDER}} mengeluhkan adanya rasa ngilu/sakit yang tidak spesifik penempatannya di {{TOOTH_LOCATION}} (misal: terdapat karies sekunder di bawah tumpatan lama).",
-    ekstraOral: "TAK.",
-    intraOral: "Terdapat karies di sekitar tepi restorasi lama (karies sekunder). \n- Tes Sondase: (+/-) menyangkut di tepi tumpatan.\n- Vitalitas: (+)",
-    diagnosis: "K02.8 - Other dental caries (Karies Sekunder / Recurrent caries)",
-    dd: "Tumpatan Overhang / Bocor",
-    tatalaksana: "1. KIE.\n2. Pembongkaran tumpatan lama yang bocor.\n3. Pembersihan karies sekunder.\n4. Restorasi ulang yang adekuat."
-  },
-  {
-    code: "K02.9",
-    name: "Dental caries, unspecified",
-    anamnesis: "{{GENDER}} datang mengeluhkan {{TOOTH_LOCATION}} berlubang. (Diagnosis belum spesifik pada kunjungan pertama).",
-    ekstraOral: "TAK.",
-    intraOral: "Tampak lesi karies pada gigi. Penilaian lebih lanjut masih diperlukan.",
-    diagnosis: "K02.9 - Dental caries, unspecified",
-    dd: "Karies Dentin, Pulpitis",
-    tatalaksana: "1. KIE.\n2. Ekskavasi jaringan karies untuk menentukan kedalaman sebenarnya.\n3. Penegakan diagnosis definitif pada tahapan selanjutnya."
-  },
-
-  // --- K04 ---
-  {
     code: "K04.0",
     name: "Pulpitis",
     anamnesis: "{{GENDER}} datang mengeluhkan nyeri spontan dan berdenyut pada {{TOOTH_LOCATION}}, terutama terjadi pada malam hari hingga mengganggu tidur. Nyeri tajam, bertahan lama meski stimulus dihilangkan, dan kadang menjalar ke area kepala atau telinga.",
@@ -236,46 +195,6 @@ const dentalDatabase = [
     tatalaksana: "1. KIE rencana PSA (Perawatan Saluran Akar) atau Ekstraksi.\n2. Buka akses (Open bur) & Preparasi saluran akar.\n3. Irigasi (NaOCl 2.5% & Saline).\n4. Medikasi intrakanal (CHKM/TKF atau Kalsium Hidroksida pasta).\n5. Tumpatan sementara.\n*Jika mahkota sisa terlalu sedikit, pro ekstraksi."
   },
   {
-    code: "K04.2",
-    name: "Pulp degeneration",
-    anamnesis: "{{GENDER}} biasanya tidak ada keluhan rasa sakit (asimtomatik) pada {{TOOTH_LOCATION}}. Ditemukan secara tidak sengaja saat pemeriksaan rutin atau foto rontgen.",
-    ekstraOral: "TAK.",
-    intraOral: "Gigi mungkin tampak utuh atau dengan tumpatan besar. \n- Tes Vitalitas: seringkali merespon lambat atau (-).\n- Rontgen: Tampak penyempitan atau obliterasi total pada kamar pulpa/saluran akar (Kalsifikasi pulpa).",
-    diagnosis: "K04.2 - Pulp degeneration (Degenerasi Pulpa / Kalsifikasi)",
-    dd: "Nekrosis Pulpa",
-    tatalaksana: "1. Observasi jika asimtomatik.\n2. KIE kepada pasien mengenai kondisi giginya.\n3. Jika diperlukan untuk restorasi protesa, perawatan PSA mungkin sangat sulit akibat kalsifikasi."
-  },
-  {
-    code: "K04.3",
-    name: "Abnormal hard tissue formation in pulp",
-    anamnesis: "{{GENDER}} tidak ada keluhan atau kadang mengeluhkan nyeri tumpul/ngilu (neuralgia) tanpa penyebab yang jelas pada area {{TOOTH_LOCATION}}.",
-    ekstraOral: "TAK.",
-    intraOral: "Gigi tampak normal. \n- Pemeriksaan klinis seringkali tidak konklusif.\n- Rontgen: Tampak gambaran radiopak membulat di dalam kamar pulpa (Pulp Stone / Dentikel).",
-    diagnosis: "K04.3 - Abnormal hard tissue formation in pulp (Pulp Stone)",
-    dd: "Pulpitis Irreversibel Asimtomatik",
-    tatalaksana: "1. Observasi jika tidak ada keluhan.\n2. Jika menimbulkan gejala nyeri persisten (neuralgia pulpa), dilakukan Perawatan Saluran Akar (PSA) dengan mengangkat pulp stone tersebut."
-  },
-  {
-    code: "K04.4",
-    name: "Acute apical periodontitis of pulpal origin",
-    anamnesis: "{{GENDER}} mengeluh {{TOOTH_LOCATION}} terasa sangat sakit saat digunakan mengunyah atau bersentuhan dengan gigi lawan. Terasa seperti giginya 'memanjang' atau lebih tinggi dari gigi lain. Sakit terus-menerus.",
-    ekstraOral: "Wajah mungkin sedikit asimetris akibat pembengkakan ringan. KGB submandibula teraba dan sakit saat ditekan.",
-    intraOral: "Gigi biasanya terdapat karies profunda mati atau tumpatan lama. \n- Tes Sondase: (-)\n- Tes Perkusi: (+ sakit sangat tajam)\n- Tes Palpasi di apikal: (+ sakit)\n- Tes Vitalitas: (-)",
-    diagnosis: "K04.4 - Acute apical periodontitis of pulpal origin",
-    dd: "Abses Periapikal Akut",
-    tatalaksana: "1. KIE.\n2. Buka akses pulpa (Open bur) untuk drainase gas/pus dari saluran akar.\n3. Penyesuaian oklusi (Oclusal adjustment) agar tidak trauma oklusi.\n4. Jika eksudat/pus keluar deras, biarkan terbuka (open dressing) 1-2 hari. Jika kering, beri medikasi intrakanal dan tumpat sementara longgar.\n5. Resep: Amoxicillin 500mg 3x1, Asam Mefenamat 500mg 3x1."
-  },
-  {
-    code: "K04.5",
-    name: "Chronic apical periodontitis",
-    anamnesis: "{{GENDER}} mengeluhkan {{TOOTH_LOCATION}} berlubang besar, dulunya pernah sakit, tapi sekarang hanya kadang-kadang terasa sedikit tidak nyaman jika diketuk keras atau ditekan.",
-    ekstraOral: "TAK.",
-    intraOral: "Gigi nekrosis. Tes vitalitas (-). Tes perkusi kadang (+ ringan). Tes palpasi (-).\n- Rontgen: Tampak radiolusensi membulat kecil hingga sedang di area periapikal (Granuloma Periapikal).",
-    diagnosis: "K04.5 - Chronic apical periodontitis (Granuloma Apikalis)",
-    dd: "Kista Radikuler (K04.8), Abses Periapikal Kronis",
-    tatalaksana: "1. KIE.\n2. Perawatan Saluran Akar (PSA) multipel kunjungan.\n3. Pembersihan, pembentukan saluran, Irigasi.\n4. Aplikasi medikasi intrakanal (Kalsium Hidroksida) untuk merangsang penyembuhan lesi apikal."
-  },
-  {
     code: "K04.6",
     name: "Chronic apical periodontitis (Sisa Akar Dewasa / Gigi Utuh Mati)",
     anamnesis: "{{GENDER}} datang dengan keluhan terdapat sisa akar (atau lubang besar yang mengakibatkan gigi mati) pada {{TOOTH_LOCATION}}. Gigi tersebut sudah lama berlubang/patah dan saat ini tidak ada keluhan nyeri spontan yang akut, namun dirasa mengganggu atau pasien sadar perlunya mencabut sisa akar tersebut agar tidak menjadi fokal infeksi di kemudian hari.",
@@ -286,88 +205,6 @@ const dentalDatabase = [
     tatalaksana: "1. KIE perlunya pencabutan sisa akar (fokal infeksi).\n2. Rencana Ekstraksi Permanen (Pencabutan sisa akar).\n3. Irigasi dan kuretase soket pasca pencabutan."
   },
   {
-    code: "K04.7",
-    name: "Periapical abscess without sinus",
-    anamnesis: "{{GENDER}} datang mengeluhkan bengkak besar pada gusi/pipi di area {{TOOTH_LOCATION}}. Terasa sangat sakit, berdenyut, memerah, dan hangat. Pasien merasakan demam ringan dan nyeri hebat saat mengunyah.",
-    ekstraOral: "Wajah asimetris, terdapat pembengkakan berbatas difus/jelas, hiperemis, palpasi sakit, teraba hangat. Terkadang fluktuatif. KGB membesar & sakit.",
-    intraOral: "Pembengkakan pada vestibular/mukobukal fold di area periapikal gigi penyebab. Mukosa merah, palpasi (+ fluktuatif/lunak), perkusi (+ sakit hebat). Vitalitas (-).",
-    diagnosis: "K04.7 - Periapical abscess without sinus (Abses Periapikal Akut)",
-    dd: "Abses Periodontal, Selulitis",
-    tatalaksana: "1. KIE urgensi kondisi infeksi.\n2. Open bur untuk membebaskan drainase pus dari kamar pulpa.\n3. Jika abses submukosa sudah fluktuatif (matang): Lakukan Insisi & Drainase.\n4. Resep Antibiotik (Amoxicillin 500mg + Metronidazole 500mg) & Analgesik kuat.\n5. Pasien diinstruksikan kontrol 3-5 hari kemudian."
-  },
-  {
-    code: "K04.8",
-    name: "Radicular cyst",
-    anamnesis: "{{GENDER}} menyadari adanya pembesaran lambat tanpa rasa sakit di sekitar {{TOOTH_LOCATION}} atau perubahan warna gigi. Bila kista sudah membesar, pasien dapat merasakan giginya goyang.",
-    ekstraOral: "Jika kista sangat besar, dapat menyebabkan asimetri wajah atau ekspansi tulang kortikal yang teraba keras.",
-    intraOral: "Gigi nekrosis (-). Mungkin ada ekspansi tulang bukal/palatal. \n- Rontgen: Tampak radiolusensi bulat dengan batas tepi sangat tegas/radiopak tipis, berdiameter > 1 cm di area apeks akar.",
-    diagnosis: "K04.8 - Radicular cyst (Kista Radikuler)",
-    dd: "Granuloma Apikalis (K04.5), Kista Dentigerous",
-    tatalaksana: "1. KIE bahwa terdapat kista yang harus diangkat.\n2. Rujuk ke Sp.BM (Spesialis Bedah Mulut) atau lakukan Perawatan Endodontik Bedah (Apeksreseksi + Enukleasi Kista).\n3. Ekstraksi gigi penyebab + Kuretase."
-  },
-
-  // --- K00 ---
-  {
-    code: "K00.0",
-    name: "Anodontia",
-    anamnesis: "{{GENDER}} atau orang tua pasien mengeluhkan ada gigi permanen atau sulung di regio {{TOOTH_LOCATION}} yang tidak tumbuh sama sekali meskipun sudah melewati usia erupsi normal.",
-    ekstraOral: "Profil wajah mungkin terpengaruh jika anodontia menyeluruh, namun umumnya TAK pada hipodontia ringan.",
-    intraOral: "Kehilangan gigi (missing teeth). Diastema multipel. Tulang alveolar ridge di area tak bergigi mungkin datar/tipis.\n- Rontgen Panoramik: Konfirmasi ketiadaan benih gigi.",
-    diagnosis: "K00.0 - Anodontia (Hipodontia / Oligodontia)",
-    dd: "Impaksi Gigi (K00.6)",
-    tatalaksana: "1. KIE kondisi genetik/tumbuh kembang.\n2. Pembuatan rontgen panoramik.\n3. Rencana pembuatan gigi tiruan (Protesa GTSL / GTSJ / Implan)."
-  },
-  {
-    code: "K00.1",
-    name: "Supernumerary teeth",
-    anamnesis: "{{GENDER}} mengeluhkan ada gigi tambahan yang tumbuh tidak pada tempatnya di dekat area {{TOOTH_LOCATION}}, menyebabkan gigi lain berjejal atau ada benjolan keras di langit-langit mulut/gusi.",
-    ekstraOral: "TAK.",
-    intraOral: "Tampak adanya gigi ekstra (lebih dari jumlah normal). Sering ditemukan di garis tengah rahang atas (Mesiodens) atau di area premolar (Paramolar).",
-    diagnosis: "K00.1 - Supernumerary teeth (Mesiodens / Paramolar)",
-    dd: "Odontoma",
-    tatalaksana: "1. KIE.\n2. Rontgen periapikal/panoramik/CBCT untuk melihat letak akar.\n3. Ekstraksi / Odontektomi gigi supernumerary tersebut."
-  },
-  {
-    code: "K00.2",
-    name: "Abnormalities of size and form of teeth",
-    anamnesis: "{{GENDER}} mengeluhkan bentuk {{TOOTH_LOCATION}} aneh, tidak sama dengan sebelahnya, atau ukurannya terlalu kecil/besar (Misal: bentuk seperti pasak/kerucut).",
-    ekstraOral: "TAK.",
-    intraOral: "Ukuran gigi lebih kecil (Mikrodontia) atau lebih besar (Makrodontia). Bentuk mahkota aneh, contoh: Peg-shaped lateral incisor.",
-    diagnosis: "K00.2 - Abnormalities of size and form of teeth (Mikrodontia / Peg-shaped)",
-    dd: "Gigi Susu Bertahan (Persistensi)",
-    tatalaksana: "1. KIE variasi anatomi genetik.\n2. Perawatan estetik: Restorasi direct komposit (veneer) atau pembuatan mahkota tiruan (Crown)."
-  },
-  {
-    code: "K00.3",
-    name: "Mottled teeth",
-    anamnesis: "{{GENDER}} mengeluhkan warna {{TOOTH_LOCATION}} tidak merata, terdapat bercak putih (opaque) berbintik-bintik, atau garis-garis kecoklatan sejak gigi tumbuh. Biasanya memiliki riwayat asupan air tinggi fluor saat kecil.",
-    ekstraOral: "TAK.",
-    intraOral: "Tampak bercak putih kapur (white spot), kuning, hingga coklat gelap pada permukaan email. Permukaan email bisa jadi pitting.",
-    diagnosis: "K00.3 - Mottled teeth (Fluorosis Dental)",
-    dd: "Amelogenesis Imperfekta (K00.5), Hipoplasia Email",
-    tatalaksana: "1. KIE penyebab fluorosis.\n2. Ringan: Bleaching atau Mikroabrasi email.\n3. Sedang-Berat: Veneer komposit / Porcelain Veneer."
-  },
-  {
-    code: "K00.4",
-    name: "Disturbances in tooth formation",
-    anamnesis: "{{GENDER}} mengeluhkan {{TOOTH_LOCATION}} mudah rapuh, berlubang, atau permukaannya kasar bergaris-garis kuning kecoklatan sejak gigi tersebut tumbuh.",
-    ekstraOral: "TAK.",
-    intraOral: "Tampak defek pada kuantitas email (Hipoplasia email). Terdapat pit, groove (alur), atau hilangnya email sebagian/seluruhnya.",
-    diagnosis: "K00.4 - Disturbances in tooth formation (Hipoplasia Email)",
-    dd: "Amelogenesis Imperfekta, Karies Rampan",
-    tatalaksana: "1. KIE perlindungan struktur gigi.\n2. Aplikasi Topikal Fluor (TAF).\n3. Restorasi dengan GIC atau Komposit."
-  },
-  {
-    code: "K00.5",
-    name: "Hereditary disturbances in tooth structure",
-    anamnesis: "{{GENDER}} mengeluhkan {{TOOTH_LOCATION}} (dan gigi lainnya) mudah aus, berwarna kuning/kecoklatan transparan, dan sangat sensitif. Adanya riwayat keluhan serupa di keluarga.",
-    ekstraOral: "TAK.",
-    intraOral: "Amelogenesis / Dentinogenesis Imperfekta: Email tipis, sangat rapuh, gigi tampak menguning transparan. Rontgen: pulp chamber mengecil.",
-    diagnosis: "K00.5 - Hereditary disturbances in tooth structure",
-    dd: "Fluorosis Berat",
-    tatalaksana: "1. KIE tentang kondisi genetik.\n2. Manajemen preventif: kontrol karies ketat, aplikasi fluor.\n3. Full mouth rehabilitation."
-  },
-  {
     code: "K00.6",
     name: "Disturbances in tooth eruption (Persistensi / Gigi Goyang)",
     anamnesis: "{{GENDER}} datang dengan keluhan gigi sulung pada {{TOOTH_LOCATION}} sudah mulai goyang (mobile) dan mengganggu aktivitas mengunyah. Telah terlihat adanya gigi permanen pengganti yang mulai tumbuh/erupsi di belakangnya. Pasien/Keluarga ingin gigi sulung tersebut dicabut agar pertumbuhan susunan gigi permanen tidak terganggu.",
@@ -376,45 +213,35 @@ const dentalDatabase = [
     diagnosis: "K00.6 - Disturbances in tooth eruption (Persistensi Gigi Sulung / Prolonged Retention)",
     dd: "Impaksi M3",
     tatalaksana: "1. KIE kepada pasien dan keluarga mengenai proses pergantian gigi dan perlunya pencabutan gigi sulung.\n2. Rencana Ekstraksi Gigi Sulung (menggunakan anestesi topikal/chlorethyl atau anestesi infiltrasi lokal)."
-  },
-  {
-    code: "K00.7",
-    name: "Teething syndrome",
-    anamnesis: "Keluarga {{GENDER}} (usia balita) mengeluhkan anak rewel, sering menangis malam, terus-menerus memasukkan jari ke dalam mulut, ngeces, dan kadang demam ringan karena akan tumbuh gigi di area {{TOOTH_LOCATION}}.",
-    ekstraOral: "Suhu tubuh anak mungkin sedikit meningkat (subfebris).",
-    intraOral: "Gusi pada area gigi sulung yang akan erupsi tampak membengkak membulat, kemerahan, dan kadang tampak pucat di puncaknya.",
-    diagnosis: "K00.7 - Teething syndrome (Sindrom Erupsi Gigi)",
-    dd: "Infeksi Herpetik Gingivostomatitis",
-    tatalaksana: "1. KIE kepada orang tua bahwa ini proses fisiologis normal.\n2. Berikan teether mainan dingin.\n3. Jika nyeri mengganggu tidur, resepkan Paracetamol sirup."
-  },
-  {
-    code: "K00.8",
-    name: "Other disorders of tooth development",
-    anamnesis: "{{GENDER}} mengeluhkan adanya perubahan warna yang aneh pada {{TOOTH_LOCATION}} tanpa adanya kavitas karies (misal diskolorasi pasca trauma masa lampau).",
-    ekstraOral: "TAK.",
-    intraOral: "Tampak kelainan lokal pada satu gigi. Penilaian lebih lanjut masih diperlukan.",
-    diagnosis: "K00.8 - Other disorders of tooth development",
-    dd: "Diskolorasi intrinsik trauma",
-    tatalaksana: "1. Evaluasi klinis dan radiografis.\n2. Tatalaksana sesuai gejala klinis spesifik."
-  },
-  {
-    code: "K00.9",
-    name: "Disorder of tooth development, unspecified",
-    anamnesis: "{{GENDER}} datang dengan keluhan kelainan bentuk/tumbuhnya {{TOOTH_LOCATION}} yang belum dapat diklasifikasikan dengan jelas pada kunjungan awal.",
-    ekstraOral: "Bergantung keparahan klinis.",
-    intraOral: "Terdapat anomali pertumbuhan/perkembangan, evaluasi rontgenografi masih diperlukan.",
-    diagnosis: "K00.9 - Disorder of tooth development, unspecified",
-    dd: "Kelainan Dental YTT",
-    tatalaksana: "1. KIE perlunya pemeriksaan penunjang lanjutan.\n2. Rujuk untuk pengambilan foto Rontgen Panoramik/CBCT."
   }
 ];
 
 // ==========================================
-// APLIKASI UTAMA (APP)
+// KOMPONEN APP ROOT (STATE MANAGER)
 // ==========================================
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('landing');
+  const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'generator', 'admin_login', 'admin_dashboard'
   const [verifiedDoctor, setVerifiedDoctor] = useState({ nama: '', wahana: '' });
+  const [firebaseUser, setFirebaseUser] = useState(null);
+
+  // Inisiasi Auth Firebase untuk DB Cloud Vercel
+  useEffect(() => {
+    if (!auth) return;
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (err) {
+        console.error("Auth failed", err);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
+    return () => unsubscribe();
+  }, []);
 
   const handleStart = (docData) => {
     setVerifiedDoctor(docData);
@@ -423,35 +250,31 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-100 selection:text-blue-900">
-      {currentPage === 'landing' && <LandingPage onStart={handleStart} />}
-      {currentPage === 'generator' && <GeneratorApp doctorData={verifiedDoctor} onBack={() => setCurrentPage('landing')} />}
+      {currentPage === 'landing' && <LandingPage onStart={handleStart} onGoAdmin={() => setCurrentPage('admin_login')} />}
+      {currentPage === 'generator' && <GeneratorApp doctorData={verifiedDoctor} onBack={() => setCurrentPage('landing')} user={firebaseUser} />}
+      {currentPage === 'admin_login' && <AdminLogin onLoginSuccess={() => setCurrentPage('admin_dashboard')} onBack={() => setCurrentPage('landing')} />}
+      {currentPage === 'admin_dashboard' && <AdminDashboard onBack={() => setCurrentPage('landing')} user={firebaseUser} />}
     </div>
   );
 }
 
 // ==========================================
-// HALAMAN LANDING (VERIFIKASI & GOOGLE SHEETS)
+// 1. HALAMAN LANDING (VERIFIKASI MANUAL & SPREADSHEET)
 // ==========================================
-function LandingPage({ onStart }) {
-  // State Data Master
+function LandingPage({ onStart, onGoAdmin }) {
   const [sheetData, setSheetData] = useState([]);
   const [availableWahanas, setAvailableWahanas] = useState([]);
-  const [availableDokters, setAvailableDokters] = useState([]);
   
-  // State UI
   const [isLoadingDB, setIsLoadingDB] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
-  // State Input Form
   const [selectedProvGid, setSelectedProvGid] = useState('');
   const [selectedWahana, setSelectedWahana] = useState('');
   const [inputDokter, setInputDokter] = useState('');
   
-  // Validation Check
   const [isValidated, setIsValidated] = useState(false);
   const [matchedDoc, setMatchedDoc] = useState(null);
 
-  // Fungsi Fetch ke Google Sheet spesifik (GID)
   const fetchGoogleSheetsData = async (gid) => {
     setIsLoadingDB(true);
     setErrorMsg('');
@@ -467,12 +290,10 @@ function LandingPage({ onStart }) {
       let parsedDocs = [];
       let currentWah = "";
 
-      // Logic Parser Cerdas untuk Excel PIDGI
       rows.forEach(row => {
         if (!row || !row.c) return;
         const cells = row.c.map(cell => cell && cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : '');
 
-        // Identifikasi Wahana RS
         const wahanaIndex = cells.findIndex(c => c.toUpperCase() === "WAHANA");
         if (wahanaIndex !== -1) {
             for (let i = wahanaIndex + 1; i < cells.length; i++) {
@@ -483,7 +304,6 @@ function LandingPage({ onStart }) {
             }
         }
 
-        // Identifikasi Nama (Tanda: Baris mengandung kata 'Universitas')
         const univIndex = cells.findIndex(c => c.toLowerCase().includes("universitas"));
         if (univIndex > 0) {
             let docName = "";
@@ -496,7 +316,6 @@ function LandingPage({ onStart }) {
             
             if (docName && docName.toLowerCase() !== "nama" && currentWah) {
                let finalName = docName;
-               // Sisipkan gelar jika belum ada agar seragam
                if (!/^drg\.?/i.test(finalName) && !/^dr\.?/i.test(finalName)) {
                    finalName = "drg. " + finalName;
                }
@@ -508,7 +327,6 @@ function LandingPage({ onStart }) {
       setSheetData(parsedDocs);
       const wahanas = [...new Set(parsedDocs.map(d => d.wahana))].sort();
       setAvailableWahanas(wahanas);
-
     } catch (error) {
       console.error(error);
       setErrorMsg("Gagal mengambil data Provinsi. Pastikan Link G-Sheets publik & GID benar.");
@@ -517,7 +335,6 @@ function LandingPage({ onStart }) {
     }
   };
 
-  // Handler Ganti Provinsi
   const handleProvinsiChange = (e) => {
     const gid = e.target.value;
     setSelectedProvGid(gid);
@@ -525,28 +342,17 @@ function LandingPage({ onStart }) {
     setInputDokter('');
     setIsValidated(false);
     setSheetData([]);
-    
-    if (gid) {
-      fetchGoogleSheetsData(gid);
-    }
+    if (gid) fetchGoogleSheetsData(gid);
   };
 
-  // Handler Ganti Wahana
   const handleWahanaChange = (e) => {
     const wah = e.target.value;
     setSelectedWahana(wah);
     setInputDokter('');
     setIsValidated(false);
-    
-    if (wah) {
-      const dokters = sheetData.filter(d => d.wahana === wah).map(d => d.nama).sort();
-      setAvailableDokters(dokters);
-    } else {
-      setAvailableDokters([]);
-    }
   };
 
-  // Handler Validasi Nama yang Diketik
+  // Validasi Input Nama (Tanpa Datalist)
   const verifyName = () => {
     if (!selectedWahana) {
       setErrorMsg("Pilih Wahana terlebih dahulu.");
@@ -559,7 +365,7 @@ function LandingPage({ onStart }) {
 
     const inputNameClean = inputDokter.trim().toLowerCase();
     
-    // Cek kecocokan (mengakomodir jika user mengetik tanpa 'drg.')
+    // Validasi Cerdas (Bisa ngetik 'alva' atau 'drg. alva')
     const found = sheetData.find(d => 
       d.wahana === selectedWahana && 
       (d.nama.toLowerCase() === inputNameClean || 
@@ -573,7 +379,7 @@ function LandingPage({ onStart }) {
       setMatchedDoc(found);
     } else {
       setIsValidated(false);
-      setErrorMsg("Nama tidak ditemukan di Wahana ini. Pastikan ejaan sesuai Spreadsheet.");
+      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai.");
     }
   };
 
@@ -589,6 +395,9 @@ function LandingPage({ onStart }) {
             PIDGI ISHIP <span className="text-blue-600">2026</span>
           </span>
         </div>
+        <button onClick={onGoAdmin} className="text-slate-400 hover:text-slate-700 transition" title="Admin Dashboard">
+          <Lock size={18} />
+        </button>
       </nav>
 
       <main className="flex-grow flex flex-col items-center justify-center px-6 py-10 text-center bg-gradient-to-b from-blue-50/50 to-white">
@@ -601,7 +410,6 @@ function LandingPage({ onStart }) {
             Lakukan verifikasi identitas (Provinsi, Wahana, & Nama) sesuai data Spreadsheet pusat untuk mengakses Generator SOAP.
           </p>
           
-          {/* KOTAK VERIFIKASI */}
           <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 text-left max-w-lg mx-auto relative overflow-hidden">
             <h2 className="text-xl font-bold text-slate-800 flex items-center mb-6 border-b border-slate-100 pb-4">
                <UserCheck className="mr-2 text-blue-600" size={24} /> Identifikasi Dokter
@@ -622,12 +430,7 @@ function LandingPage({ onStart }) {
                   <MapPin size={16} className="mr-1.5 text-slate-500" /> 1. Pilih Provinsi
                 </label>
                 <div className="relative">
-                  <select 
-                    value={selectedProvGid}
-                    onChange={handleProvinsiChange}
-                    disabled={isValidated}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm appearance-none cursor-pointer text-slate-800 font-medium"
-                  >
+                  <select value={selectedProvGid} onChange={handleProvinsiChange} disabled={isValidated} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm appearance-none cursor-pointer text-slate-800 font-medium">
                     <option value="">- Silakan Pilih Provinsi -</option>
                     {PROVINCES_DATA.map((prov, idx) => (
                       <option key={idx} value={prov.gid}>{prov.name}</option>
@@ -637,7 +440,6 @@ function LandingPage({ onStart }) {
                 </div>
               </div>
 
-              {/* Status Loading */}
               {isLoadingDB && (
                 <div className="flex flex-col items-center justify-center py-4 opacity-70">
                    <Loader2 className="animate-spin text-blue-500 mb-2" size={24} />
@@ -652,12 +454,7 @@ function LandingPage({ onStart }) {
                     <Building size={16} className="mr-1.5 text-slate-500" /> 2. Pilih Wahana Penempatan
                   </label>
                   <div className="relative">
-                    <select 
-                      value={selectedWahana}
-                      onChange={handleWahanaChange}
-                      disabled={isValidated}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm appearance-none cursor-pointer text-slate-800 font-medium"
-                    >
+                    <select value={selectedWahana} onChange={handleWahanaChange} disabled={isValidated} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm appearance-none cursor-pointer text-slate-800 font-medium">
                       <option value="">- Silakan Pilih Wahana RS -</option>
                       {availableWahanas.map((whn, idx) => (
                         <option key={idx} value={whn}>{whn}</option>
@@ -668,7 +465,7 @@ function LandingPage({ onStart }) {
                 </div>
               )}
 
-              {/* 3. Input Nama Dokter */}
+              {/* 3. Input Nama Manual (No Datalist) */}
               {!isLoadingDB && selectedWahana && !isValidated && (
                 <div className="animate-in fade-in duration-300">
                   <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center">
@@ -677,27 +474,16 @@ function LandingPage({ onStart }) {
                   <div className="flex space-x-2">
                     <input 
                       type="text"
-                      list="doctors-list"
                       value={inputDokter}
                       onChange={(e) => setInputDokter(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && verifyName()}
-                      placeholder="Ketik drg. Nama Anda..." 
+                      placeholder="Ketik nama Anda (cth: drg. Alva)" 
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm font-medium text-slate-800"
                     />
-                    <datalist id="doctors-list">
-                      {availableDokters.map((dok, idx) => (
-                        <option key={idx} value={dok} />
-                      ))}
-                    </datalist>
-                    <button 
-                      onClick={verifyName}
-                      disabled={!inputDokter.trim()}
-                      className="px-4 py-3 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-900 disabled:opacity-50 transition shadow-sm"
-                    >
+                    <button onClick={verifyName} disabled={!inputDokter.trim()} className="px-4 py-3 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-900 disabled:opacity-50 transition shadow-sm">
                       Cek
                     </button>
                   </div>
-                  <p className="text-xs text-slate-400 mt-2 italic">*Ketik nama Anda sesuai data Spreadsheet lalu klik Cek.</p>
                 </div>
               )}
 
@@ -705,27 +491,15 @@ function LandingPage({ onStart }) {
               {isValidated && matchedDoc && (
                 <div className="animate-in fade-in zoom-in-95 duration-500 pt-2">
                   <div className="p-4 bg-green-50 text-green-800 rounded-xl border border-green-200 text-center mb-6 flex flex-col items-center">
-                    <div className="h-12 w-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
-                      <Check size={24} strokeWidth={3} />
-                    </div>
+                    <div className="h-12 w-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2"><Check size={24} strokeWidth={3} /></div>
                     <h3 className="font-bold text-lg">Akses Disetujui!</h3>
                     <p className="text-sm mt-1 opacity-90">Kredensial valid untuk <strong>{matchedDoc.nama}</strong> di {matchedDoc.wahana}.</p>
                   </div>
 
-                  <button 
-                    onClick={() => onStart(matchedDoc)}
-                    className="w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center"
-                  >
+                  <button onClick={() => onStart(matchedDoc)} className="w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center">
                     Mulai Generate SOAP <Stethoscope className="ml-2" size={22} />
                   </button>
-                  <button 
-                    onClick={() => {
-                      setIsValidated(false);
-                      setInputDokter('');
-                      setMatchedDoc(null);
-                    }}
-                    className="w-full mt-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition"
-                  >
+                  <button onClick={() => { setIsValidated(false); setInputDokter(''); setMatchedDoc(null); }} className="w-full mt-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition">
                     Ganti Akun Dokter
                   </button>
                 </div>
@@ -733,7 +507,6 @@ function LandingPage({ onStart }) {
 
             </div>
           </div>
-
         </div>
       </main>
     </div>
@@ -742,28 +515,47 @@ function LandingPage({ onStart }) {
 
 
 // ==========================================
-// APLIKASI UTAMA (GENERATOR)
+// 2. APLIKASI GENERATOR (TRACKING ONLINE DB)
 // ==========================================
-function GeneratorApp({ doctorData, onBack }) {
+function GeneratorApp({ doctorData, onBack, user }) {
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState('');
   const [gender, setGender] = useState('Laki-laki');
   const [toothNum, setToothNum] = useState('');
-
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDisease, setSelectedDisease] = useState(null);
   const wrapperRef = useRef(null);
-
   const [selectedProcedure, setSelectedProcedure] = useState('Bawaan ICD-10 (Default)');
-
   const [selectedMeds, setSelectedMeds] = useState([]);
   const [isMedDropdownOpen, setIsMedDropdownOpen] = useState(false);
   const [medSearchTerm, setMedSearchTerm] = useState('');
   const medWrapperRef = useRef(null);
-
   const [copied, setCopied] = useState(false);
 
+  // LOGIC TRACKING ONLINE DOCTORS KE DATABASE VERCEL/FIREBASE
+  useEffect(() => {
+    if (!user || !db || !doctorData.nama) return;
+    
+    // Buat ID unik untuk dokumen berdasarkan nama & wahana
+    const safeId = `${doctorData.nama}_${doctorData.wahana}`.replace(/[^a-zA-Z0-9]/g, '_');
+    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'online_doctors', safeId);
+    
+    // Write Status Online
+    setDoc(docRef, {
+        nama: doctorData.nama,
+        wahana: doctorData.wahana,
+        loginTime: Date.now(),
+        status: 'online'
+    }).catch(err => console.log("Tracker err", err));
+
+    // Hapus data saat dokter menekan "Tutup Aplikasi" atau merefresh halaman
+    return () => {
+        deleteDoc(docRef).catch(err => console.log("Tracker err", err));
+    };
+  }, [user, db, doctorData]);
+
+  // Handle cliks outside of dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) setIsDropdownOpen(false);
@@ -777,50 +569,18 @@ function GeneratorApp({ doctorData, onBack }) {
     item.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const filteredMeds = medicationsList.filter(med => med.toLowerCase().includes(medSearchTerm.toLowerCase()));
 
-  const filteredMeds = medicationsList.filter(med => 
-    med.toLowerCase().includes(medSearchTerm.toLowerCase())
-  );
-
-  const handleSelectICD = (disease) => {
-    setSelectedDisease(disease);
-    setSearchQuery(`${disease.code} - ${disease.name}`);
-    setIsDropdownOpen(false);
-  };
-
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setIsDropdownOpen(true);
-    if(e.target.value === '') setSelectedDisease(null);
-  };
-
-  const toggleMedication = (med) => {
-    if (selectedMeds.includes(med)) setSelectedMeds(selectedMeds.filter(m => m !== med));
-    else setSelectedMeds([...selectedMeds, med]);
-  };
-
-  const removeMedication = (med) => {
-    setSelectedMeds(selectedMeds.filter(m => m !== med));
-  };
+  const handleSelectICD = (disease) => { setSelectedDisease(disease); setSearchQuery(`${disease.code} - ${disease.name}`); setIsDropdownOpen(false); };
+  const toggleMedication = (med) => { selectedMeds.includes(med) ? setSelectedMeds(selectedMeds.filter(m => m !== med)) : setSelectedMeds([...selectedMeds, med]); };
+  const removeMedication = (med) => setSelectedMeds(selectedMeds.filter(m => m !== med));
 
   const generateReportText = () => {
     if (!selectedDisease) return "Silakan pilih diagnosis ICD-10 terlebih dahulu.";
-    
     const parsedAnamnesis = parseAnamnesis(selectedDisease.anamnesis, gender, toothNum);
-    
     let isCustomProcedure = selectedProcedure !== 'Bawaan ICD-10 (Default)' && proceduresData[selectedProcedure];
-    let planSection = "";
-
-    if (isCustomProcedure) {
-      planSection = `Tindakan Terpilih: ${selectedProcedure}\n\nTatalaksana:\n${proceduresData[selectedProcedure].tatalaksana}\n\nKIE:\n${proceduresData[selectedProcedure].kie}`;
-    } else {
-      planSection = selectedDisease.tatalaksana;
-    }
-
-    let obatSection = "";
-    if (selectedMeds.length > 0) {
-      obatSection = "\n\nResep Obat / Medikamen:\n" + selectedMeds.map(m => `- ${m}`).join("\n");
-    }
+    let planSection = isCustomProcedure ? `Tindakan Terpilih: ${selectedProcedure}\n\nTatalaksana:\n${proceduresData[selectedProcedure].tatalaksana}\n\nKIE:\n${proceduresData[selectedProcedure].kie}` : selectedDisease.tatalaksana;
+    let obatSection = selectedMeds.length > 0 ? "\n\nResep Obat / Medikamen:\n" + selectedMeds.map(m => `- ${m}`).join("\n") : "";
 
     return `IDENTITAS PASIEN
 Nama: ${patientName || '-'}
@@ -851,22 +611,12 @@ Fasilitas: ${doctorData.wahana}
   const copyToClipboard = () => {
     const text = generateReportText();
     if(navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
+        navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
     } else {
         const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "absolute";
-        textArea.style.left = "-999999px";
-        document.body.prepend(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (error) {} 
+        textArea.value = text; textArea.style.position = "absolute"; textArea.style.left = "-999999px";
+        document.body.prepend(textArea); textArea.select();
+        try { document.execCommand('copy'); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch (error) {} 
         finally { textArea.remove(); }
     }
   };
@@ -884,32 +634,24 @@ Fasilitas: ${doctorData.wahana}
             <p className="text-xs font-medium text-slate-500 flex items-center"><User size={10} className="mr-1"/> {doctorData.nama} — {doctorData.wahana}</p>
           </div>
         </div>
-        <button 
-          onClick={onBack}
-          className="text-xs font-medium text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-4 py-2 rounded-lg transition self-start sm:self-auto"
-        >
-          Keluar (Logout)
+        <button onClick={onBack} className="text-xs font-medium text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-4 py-2 rounded-lg transition self-start sm:self-auto flex items-center">
+          <LogOut size={14} className="mr-1"/> Keluar (Logout)
         </button>
       </header>
 
       <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
-        
         {/* PANEL KIRI */}
         <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col overflow-y-auto shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
           <div className="p-6">
             <h2 className="text-xl font-bold text-slate-800 mb-5 flex items-center border-b border-slate-100 pb-3">
-              <ShieldPlus className="mr-2 text-blue-600" size={24}/> 
-              Input Data Klinis
+              <ShieldPlus className="mr-2 text-blue-600" size={24}/> Input Data Klinis
             </h2>
-
             {/* Identitas */}
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Nama Pasien</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User size={16} className="text-slate-400" />
-                  </div>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><User size={16} className="text-slate-400" /></div>
                   <input type="text" value={patientName} onChange={(e) => setPatientName(e.target.value)} placeholder="Contoh: Tn. Budi" className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm"/>
                 </div>
               </div>
@@ -922,8 +664,7 @@ Fasilitas: ${doctorData.wahana}
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">Jenis Kelamin</label>
                   <div className="relative">
                     <select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm appearance-none cursor-pointer">
-                      <option value="Laki-laki">Laki-laki</option>
-                      <option value="Perempuan">Perempuan</option>
+                      <option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option>
                     </select>
                     <ChevronDown size={14} className="absolute inset-y-0 right-3 my-auto text-slate-400 pointer-events-none" />
                   </div>
@@ -932,47 +673,31 @@ Fasilitas: ${doctorData.wahana}
               <div>
                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Elemen / Gigi</label>
                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Hash size={16} className="text-slate-400" />
-                    </div>
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Hash size={16} className="text-slate-400" /></div>
                     <input type="text" value={toothNum} onChange={(e) => setToothNum(e.target.value)} placeholder="Ex: 16" className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition text-sm font-medium text-blue-700"/>
                  </div>
               </div>
             </div>
-
             <div className="w-full h-px bg-slate-200 mb-5"></div>
-
             {/* ICD Dropdown */}
             <div className="relative mb-5" ref={wrapperRef}>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">Kode ICD-10 <span className="text-red-500">*</span></label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={18} className="text-blue-500" />
-                </div>
-                <input 
-                  type="text" value={searchQuery} onChange={handleSearchChange} onFocus={() => setIsDropdownOpen(true)}
-                  placeholder="Ketik K02, K04, K00..." 
-                  className="w-full pl-10 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none font-semibold text-slate-800 transition shadow-sm"
-                />
-                {searchQuery && (
-                  <button onClick={() => { setSearchQuery(''); setSelectedDisease(null); setIsDropdownOpen(false); }} className="absolute inset-y-0 right-8 pr-1 flex items-center text-slate-400 hover:text-red-500 transition"><X size={18} /></button>
-                )}
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search size={18} className="text-blue-500" /></div>
+                <input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setIsDropdownOpen(true); if(e.target.value === '') setSelectedDisease(null); }} onFocus={() => setIsDropdownOpen(true)} placeholder="Ketik K02, K04, K00..." className="w-full pl-10 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none font-semibold text-slate-800 transition shadow-sm"/>
+                {searchQuery && (<button onClick={() => { setSearchQuery(''); setSelectedDisease(null); setIsDropdownOpen(false); }} className="absolute inset-y-0 right-8 pr-1 flex items-center text-slate-400 hover:text-red-500 transition"><X size={18} /></button>)}
                 <ChevronDown size={18} className="absolute inset-y-0 right-3 my-auto text-slate-400 pointer-events-none" />
               </div>
               {isDropdownOpen && (
                 <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto py-1">
-                  {filteredData.length > 0 ? (
-                    filteredData.map((item, index) => (
+                  {filteredData.length > 0 ? filteredData.map((item, index) => (
                       <div key={index} onClick={() => handleSelectICD(item)} className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition">
-                        <div className="font-bold text-blue-700 text-sm">{item.code}</div>
-                        <div className="text-xs text-slate-600 mt-0.5 leading-snug">{item.name}</div>
+                        <div className="font-bold text-blue-700 text-sm">{item.code}</div><div className="text-xs text-slate-600 mt-0.5 leading-snug">{item.name}</div>
                       </div>
-                    ))
-                  ) : (<div className="px-4 py-6 text-sm text-slate-500 text-center">Data tidak ditemukan</div>)}
+                    )) : (<div className="px-4 py-6 text-sm text-slate-500 text-center">Data tidak ditemukan</div>)}
                 </div>
               )}
             </div>
-
             {/* Tatalaksana */}
             <div className="mb-5 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
               <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center"><Syringe size={16} className="mr-2 text-indigo-500"/>Tatalaksana Akhir</label>
@@ -984,30 +709,23 @@ Fasilitas: ${doctorData.wahana}
                 <ChevronDown size={16} className="absolute inset-y-0 right-3 my-auto text-slate-500 pointer-events-none" />
               </div>
             </div>
-
             {/* Resep Obat Multi-select */}
             <div className="relative mb-6" ref={medWrapperRef}>
               <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center"><Pill size={16} className="mr-2 text-emerald-500"/>Resep Obat</label>
               <div onClick={() => setIsMedDropdownOpen(!isMedDropdownOpen)} className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg outline-none transition text-sm cursor-pointer shadow-sm flex items-center justify-between hover:border-emerald-400">
-                <span className={selectedMeds.length > 0 ? "text-slate-800 font-medium" : "text-slate-400"}>
-                  {selectedMeds.length > 0 ? `${selectedMeds.length} obat dipilih...` : 'Pilih Obat (Bisa lebih dari 1)'}
-                </span>
+                <span className={selectedMeds.length > 0 ? "text-slate-800 font-medium" : "text-slate-400"}>{selectedMeds.length > 0 ? `${selectedMeds.length} obat dipilih...` : 'Pilih Obat (Bisa lebih dari 1)'}</span>
                 <ChevronDown size={16} className="text-slate-500" />
               </div>
               {isMedDropdownOpen && (
                 <div className="absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-2xl">
-                  <div className="p-2 border-b border-slate-100">
-                     <input type="text" placeholder="Cari obat..." value={medSearchTerm} onChange={(e) => setMedSearchTerm(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded text-sm focus:outline-none focus:border-emerald-500"/>
-                  </div>
+                  <div className="p-2 border-b border-slate-100"><input type="text" placeholder="Cari obat..." value={medSearchTerm} onChange={(e) => setMedSearchTerm(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded text-sm focus:outline-none focus:border-emerald-500"/></div>
                   <div className="max-h-56 overflow-y-auto py-1">
-                    {filteredMeds.length > 0 ? (
-                      filteredMeds.map((med, idx) => (
+                    {filteredMeds.length > 0 ? filteredMeds.map((med, idx) => (
                         <label key={idx} className="flex items-start px-3 py-2 hover:bg-emerald-50 cursor-pointer">
                           <input type="checkbox" className="mt-1 rounded text-emerald-500" checked={selectedMeds.includes(med)} onChange={() => toggleMedication(med)}/>
                           <span className="ml-2 text-xs text-slate-700 leading-snug">{med}</span>
                         </label>
-                      ))
-                    ) : (<div className="px-4 py-4 text-xs text-slate-500 text-center">Obat tidak ditemukan</div>)}
+                      )) : (<div className="px-4 py-4 text-xs text-slate-500 text-center">Obat tidak ditemukan</div>)}
                   </div>
                 </div>
               )}
@@ -1022,7 +740,6 @@ Fasilitas: ${doctorData.wahana}
                 </div>
               )}
             </div>
-
           </div>
         </div>
 
@@ -1111,6 +828,185 @@ Fasilitas: ${doctorData.wahana}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 3. APLIKASI ADMIN LOGIN
+// ==========================================
+function AdminLogin({ onLoginSuccess, onBack }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (username === 'adminexow' && password === 'verystrongpassword321') {
+      onLoginSuccess();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 3000);
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-900 justify-center items-center px-4">
+       <button onClick={onBack} className="absolute top-6 left-6 text-slate-400 hover:text-white transition flex items-center">
+          <ArrowRight className="mr-2 rotate-180" size={16} /> Kembali ke Publik
+       </button>
+       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full">
+         <div className="flex justify-center mb-6">
+            <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
+              <Lock size={32} />
+            </div>
+         </div>
+         <h2 className="text-2xl font-extrabold text-center text-slate-800 mb-2">Admin Area</h2>
+         <p className="text-center text-slate-500 text-sm mb-8">Login untuk memantau aktivitas dokter gigi di Wahana ISHIP.</p>
+
+         <form onSubmit={handleLogin} className="space-y-5">
+           <div>
+             <label className="block text-sm font-bold text-slate-700 mb-1.5">Username</label>
+             <input type="text" value={username} onChange={(e)=>setUsername(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition"/>
+           </div>
+           <div>
+             <label className="block text-sm font-bold text-slate-700 mb-1.5">Password</label>
+             <input type="password" value={password} onChange={(e)=>setPassword(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition"/>
+           </div>
+           
+           {error && <p className="text-sm text-red-500 text-center font-medium">Username atau Password salah!</p>}
+
+           <button type="submit" className="w-full py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition shadow-lg mt-4">
+             Login ke Dashboard
+           </button>
+         </form>
+       </div>
+    </div>
+  );
+}
+
+// ==========================================
+// 4. APLIKASI ADMIN DASHBOARD (MONITORING)
+// ==========================================
+function AdminDashboard({ onBack, user }) {
+  const [onlineDoctors, setOnlineDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user || !db) {
+       setLoading(false);
+       return;
+    }
+    
+    // Fetch Data "Online" dari Vercel/Firebase Cloud
+    const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'online_doctors');
+    const unsubscribe = onSnapshot(collRef, (snapshot) => {
+        const docs = [];
+        snapshot.forEach(doc => {
+           docs.push({ id: doc.id, ...doc.data() });
+        });
+        // Urutkan berdasarkan waktu login terbaru
+        docs.sort((a, b) => b.loginTime - a.loginTime);
+        setOnlineDoctors(docs);
+        setLoading(false);
+    }, (error) => {
+        console.error("Gagal memuat status online:", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const formatTime = (timestamp) => {
+    if(!timestamp) return "-";
+    return new Date(timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-slate-50">
+      <nav className="bg-slate-900 px-6 py-4 flex items-center justify-between shadow-md">
+        <div className="flex items-center text-white space-x-3">
+          <Activity size={24} className="text-red-400"/>
+          <span className="text-xl font-bold">PIDGI Admin Monitor</span>
+        </div>
+        <button onClick={onBack} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition text-sm font-medium">
+          Tutup Panel Admin
+        </button>
+      </nav>
+
+      <main className="flex-grow p-6 md:p-10 max-w-6xl mx-auto w-full">
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
+             <div className="h-14 w-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-4"><Users size={28}/></div>
+             <div>
+               <p className="text-sm text-slate-500 font-medium">Dokter Sedang Online</p>
+               <h3 className="text-3xl font-black text-slate-800">{onlineDoctors.length}</h3>
+             </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
+             <div className="h-14 w-14 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-4"><Building size={28}/></div>
+             <div>
+               <p className="text-sm text-slate-500 font-medium">Fasilitas Aktif (Wahana)</p>
+               <h3 className="text-3xl font-black text-slate-800">
+                  {new Set(onlineDoctors.map(d => d.wahana)).size}
+               </h3>
+             </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center">
+             <p className="text-xs text-slate-400 font-medium mb-1">Status Sinkronisasi Sistem</p>
+             <div className="flex items-center">
+               <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse mr-2"></div>
+               <span className="text-sm font-bold text-green-600">Database Real-time Terhubung</span>
+             </div>
+             <p className="text-xs text-slate-500 mt-2 italic">Data diperbarui otomatis jika ada dokter masuk/keluar.</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+             <h3 className="text-lg font-bold text-slate-800 flex items-center"><Activity size={18} className="mr-2 text-red-500"/> Log Aktivitas Dokter ISHIP</h3>
+           </div>
+           
+           <div className="overflow-x-auto">
+             <table className="w-full text-left text-sm">
+               <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                 <tr>
+                   <th className="px-6 py-4">Nama Dokter</th>
+                   <th className="px-6 py-4">Penempatan Wahana (RS)</th>
+                   <th className="px-6 py-4">Waktu Akses</th>
+                   <th className="px-6 py-4 text-center">Status</th>
+                 </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100">
+                 {loading ? (
+                   <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-400"><Loader2 className="animate-spin mx-auto mb-2" size={24}/> Memuat data...</td></tr>
+                 ) : onlineDoctors.length === 0 ? (
+                   <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-500 font-medium">Tidak ada dokter yang sedang menggunakan generator saat ini.</td></tr>
+                 ) : (
+                   onlineDoctors.map((doc) => (
+                     <tr key={doc.id} className="hover:bg-slate-50 transition">
+                       <td className="px-6 py-4 font-bold text-slate-800 flex items-center">
+                          <User size={16} className="mr-2 text-slate-400"/> {doc.nama}
+                       </td>
+                       <td className="px-6 py-4 text-slate-600">{doc.wahana}</td>
+                       <td className="px-6 py-4 text-slate-500 flex items-center">
+                          <Clock size={14} className="mr-1.5"/> {formatTime(doc.loginTime)}
+                       </td>
+                       <td className="px-6 py-4 text-center">
+                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                           <span className="h-1.5 w-1.5 bg-green-500 rounded-full mr-1.5"></span> Aktif
+                         </span>
+                       </td>
+                     </tr>
+                   ))
+                 )}
+               </tbody>
+             </table>
+           </div>
+        </div>
+
+      </main>
     </div>
   );
 }
