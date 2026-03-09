@@ -1,36 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, Stethoscope, FileText, Copy, Check, Activity, ShieldPlus, ArrowRight, User, Hash, X, Syringe, Pill, Trash2, UserCheck, MapPin, Building, ShieldAlert, ShieldCheck, Loader2, Lock, Users, LogOut, Clock } from 'lucide-react';
 
-// === FIREBASE STORAGE INIT (UNTUK FITUR ONLINE DOCTORS) ===
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'axa-iship-app';
-
-// Mendukung env variables dari Vercel dengan aman tanpa memicu warning es2015 Rollup
-let viteEnv = null;
-try {
-  viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
-} catch (error) {
-  // Abaikan error jika berjalan di luar environment Vite
-}
-
-const fbConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : viteEnv;
-
-let db = null;
-let auth = null;
-
-if (fbConfigStr) {
-  try {
-    const firebaseConfig = JSON.parse(fbConfigStr);
-    const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } catch (e) {
-    console.error("Firebase init error", e);
-  }
-}
+// ==========================================
+// VERCEL KV DATABASE (UPSTASH REDIS)
+// ==========================================
+const KV_URL = "https://merry-hedgehog-35658.upstash.io";
+const KV_TOKEN = "AYtKAAIncDIzYmQyNWM4YTM2Y2E0ODZkOTJlNTYwNzBjMzMyNWQxZHAyMzU2NTg";
 
 // ==========================================
 // PENGATURAN LINK GOOGLE SPREADSHEET (MASTER)
@@ -420,43 +395,24 @@ const dentalDatabase = [
 // KOMPONEN APP ROOT (STATE MANAGER)
 // ==========================================
 export default function App() {
-  // SessionStorage untuk menghindari log out ketika di-refresh
+  // SessionStorage Anti-Refresh Reset
   const [currentPage, setCurrentPage] = useState(() => {
-    return sessionStorage.getItem('appCurrentPage') || 'landing';
-  }); 
+    return localStorage.getItem('appCurrentPage') || 'landing';
+  });
+  
   const [verifiedDoctor, setVerifiedDoctor] = useState(() => {
-    const saved = sessionStorage.getItem('verifiedDoctor');
+    const saved = localStorage.getItem('verifiedDoctor');
     return saved ? JSON.parse(saved) : { nama: '', wahana: '' };
   });
-  const [firebaseUser, setFirebaseUser] = useState(null);
 
-  // Sync state ke sessionStorage
+  // Sync state ke localStorage saat ada perubahan
   useEffect(() => {
-    sessionStorage.setItem('appCurrentPage', currentPage);
+    localStorage.setItem('appCurrentPage', currentPage);
   }, [currentPage]);
 
   useEffect(() => {
-    sessionStorage.setItem('verifiedDoctor', JSON.stringify(verifiedDoctor));
+    localStorage.setItem('verifiedDoctor', JSON.stringify(verifiedDoctor));
   }, [verifiedDoctor]);
-
-  // Inisiasi Auth Firebase untuk DB Cloud Vercel
-  useEffect(() => {
-    if (!auth) return;
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (err) {
-        console.error("Auth failed", err);
-      }
-    };
-    initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setFirebaseUser);
-    return () => unsubscribe();
-  }, []);
 
   const handleStart = (docData) => {
     setVerifiedDoctor(docData);
@@ -464,28 +420,28 @@ export default function App() {
   };
 
   const handleDoctorLogout = () => {
-    sessionStorage.removeItem('verifiedDoctor');
+    localStorage.removeItem('verifiedDoctor');
     setVerifiedDoctor({ nama: '', wahana: '' });
     setCurrentPage('landing');
   };
 
   const handleAdminLogout = () => {
-    sessionStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('isAdminLoggedIn');
     setCurrentPage('landing');
   };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-100 selection:text-blue-900">
       {currentPage === 'landing' && <LandingPage onStart={handleStart} onGoAdmin={() => setCurrentPage('admin_login')} />}
-      {currentPage === 'generator' && <GeneratorApp doctorData={verifiedDoctor} onBack={handleDoctorLogout} user={firebaseUser} />}
+      {currentPage === 'generator' && <GeneratorApp doctorData={verifiedDoctor} onBack={handleDoctorLogout} />}
       {currentPage === 'admin_login' && <AdminLogin onLoginSuccess={() => setCurrentPage('admin_dashboard')} onBack={() => setCurrentPage('landing')} />}
-      {currentPage === 'admin_dashboard' && <AdminDashboard onBack={handleAdminLogout} user={firebaseUser} />}
+      {currentPage === 'admin_dashboard' && <AdminDashboard onBack={handleAdminLogout} />}
     </div>
   );
 }
 
 // ==========================================
-// 1. HALAMAN LANDING (VERIFIKASI MANUAL & SPREADSHEET)
+// 1. HALAMAN LANDING (VERIFIKASI SPREADSHEET)
 // ==========================================
 function LandingPage({ onStart, onGoAdmin }) {
   const [sheetData, setSheetData] = useState([]);
@@ -578,20 +534,12 @@ function LandingPage({ onStart, onGoAdmin }) {
     setIsValidated(false);
   };
 
-  // Validasi Input Nama (Tanpa Datalist)
   const verifyName = () => {
-    if (!selectedWahana) {
-      setErrorMsg("Pilih Wahana terlebih dahulu.");
-      return;
-    }
-    if (!inputDokter.trim()) {
-      setErrorMsg("Ketik nama Anda terlebih dahulu.");
-      return;
-    }
+    if (!selectedWahana) return setErrorMsg("Pilih Wahana terlebih dahulu.");
+    if (!inputDokter.trim()) return setErrorMsg("Ketik nama Anda terlebih dahulu.");
 
     const inputNameClean = inputDokter.trim().toLowerCase();
     
-    // Validasi Cerdas (Bisa ngetik 'alva' atau 'drg. alva')
     const found = sheetData.find(d => 
       d.wahana === selectedWahana && 
       (d.nama.toLowerCase() === inputNameClean || 
@@ -741,9 +689,9 @@ function LandingPage({ onStart, onGoAdmin }) {
 
 
 // ==========================================
-// 2. APLIKASI GENERATOR (TRACKING ONLINE DB)
+// 2. APLIKASI GENERATOR (TRACKING VERCEL KV)
 // ==========================================
-function GeneratorApp({ doctorData, onBack, user }) {
+function GeneratorApp({ doctorData, onBack }) {
   const [patientName, setPatientName] = useState('');
   const [patientAge, setPatientAge] = useState('');
   const [gender, setGender] = useState('Laki-laki');
@@ -759,38 +707,52 @@ function GeneratorApp({ doctorData, onBack, user }) {
   const medWrapperRef = useRef(null);
   const [copied, setCopied] = useState(false);
 
-  // LOGIC TRACKING ONLINE DOCTORS KE DATABASE VERCEL/FIREBASE (Heartbeat Mechanism)
+  // LOGIC TRACKING ONLINE DOCTORS KE UPSTASH/VERCEL KV (Heartbeat & Self-Destruct EX 60)
   useEffect(() => {
-    if (!user || !db || !doctorData.nama) return;
+    if (!doctorData || !doctorData.nama) return;
     
-    const safeId = `${doctorData.nama}_${doctorData.wahana}`.replace(/[^a-zA-Z0-9]/g, '_');
-    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'online_doctors', safeId);
+    // Ganti karakter spasi dll menjadi aman untuk Key Redis
+    const safeId = `online:${doctorData.nama}_${doctorData.wahana}`.replace(/[^a-zA-Z0-9:_]/g, '_');
+    const loginTime = Date.now();
     
-    // Tulis Status Awal Online
-    setDoc(docRef, {
+    const payload = JSON.stringify({
         nama: doctorData.nama,
         wahana: doctorData.wahana,
-        loginTime: Date.now(),
-        lastActive: Date.now(),
-        status: 'online'
-    }).catch(() => {});
+        loginTime: loginTime
+    });
 
-    // Heartbeat: Update lastActive setiap 30 detik
-    const heartbeat = setInterval(() => {
-        setDoc(docRef, { lastActive: Date.now() }, { merge: true }).catch(() => {});
-    }, 30000);
+    const pingKV = async () => {
+        try {
+            await fetch(`${KV_URL}/`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(["SET", safeId, payload, "EX", 60]) // Kedaluwarsa dalam 60 detik jika tidak di ping
+            });
+        } catch (err) {
+            console.error("KV Ping Error", err);
+        }
+    };
+
+    pingKV(); // Ping pertama
+    const interval = setInterval(pingKV, 30000); // Ping setiap 30 detik untuk memperpanjang nyawa data
 
     const handleUnload = () => {
-        deleteDoc(docRef).catch(() => {});
+        // Hapus Instan saat browser ditutup
+        fetch(`${KV_URL}/`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(["DEL", safeId]),
+            keepalive: true
+        }).catch(() => {});
     };
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
-        clearInterval(heartbeat);
+        clearInterval(interval);
         window.removeEventListener('beforeunload', handleUnload);
-        deleteDoc(docRef).catch(() => {});
+        handleUnload();
     };
-  }, [user, db, doctorData]);
+  }, [doctorData]);
 
   // Handle cliks outside of dropdowns
   useEffect(() => {
@@ -1077,9 +1039,8 @@ function AdminLogin({ onLoginSuccess, onBack }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
 
-  // Auto skip jika admin sudah pernah login
   useEffect(() => {
-    if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+    if (localStorage.getItem('isAdminLoggedIn') === 'true') {
       onLoginSuccess();
     }
   }, []);
@@ -1087,7 +1048,7 @@ function AdminLogin({ onLoginSuccess, onBack }) {
   const handleLogin = (e) => {
     e.preventDefault();
     if (username === 'adminexow' && password === 'verystrongpassword321') {
-      sessionStorage.setItem('isAdminLoggedIn', 'true');
+      localStorage.setItem('isAdminLoggedIn', 'true');
       onLoginSuccess();
     } else {
       setError(true);
@@ -1133,59 +1094,54 @@ function AdminLogin({ onLoginSuccess, onBack }) {
 // ==========================================
 // 4. APLIKASI ADMIN DASHBOARD (MONITORING)
 // ==========================================
-function AdminDashboard({ onBack, user }) {
+function AdminDashboard({ onBack }) {
   const [onlineDoctors, setOnlineDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(Date.now());
 
-  // Memaksa update UI setiap 30 detik untuk mendeteksi Ghost Session
+  // Vercel KV Fetching (No Firebase)
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 30000);
-    return () => clearInterval(timer);
+    const fetchOnlineDocs = async () => {
+        try {
+            // Langkah 1: Pindai (SCAN) Semua Kunci yang di awali dengan 'online:'
+            const scanRes = await fetch(`${KV_URL}/`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(["SCAN", "0", "MATCH", "online:*", "COUNT", "1000"])
+            });
+            const scanData = await scanRes.json();
+            const keys = scanData.result[1];
+
+            if (!keys || keys.length === 0) {
+                setOnlineDoctors([]);
+                setLoading(false);
+                return;
+            }
+
+            // Langkah 2: Ambil (MGET) semua Data Dokter dari kunci-kunci tersebut
+            const mgetRes = await fetch(`${KV_URL}/`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${KV_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(["MGET", ...keys])
+            });
+            const mgetData = await mgetRes.json();
+            
+            // Konversi JSON String ke Object
+            const docs = mgetData.result.filter(Boolean).map(d => JSON.parse(d));
+            docs.sort((a, b) => b.loginTime - a.loginTime);
+            
+            setOnlineDoctors(docs);
+        } catch (err) {
+            console.error("Gagal memuat dari KV:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchOnlineDocs();
+    const interval = setInterval(fetchOnlineDocs, 10000); // Polling otomatis tiap 10 detik
+
+    return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (!user || !db) {
-       setLoading(false);
-       return;
-    }
-    
-    // Fetch Data "Online" dari Vercel/Firebase Cloud
-    const collRef = collection(db, 'artifacts', appId, 'public', 'data', 'online_doctors');
-    const unsubscribe = onSnapshot(collRef, (snapshot) => {
-        const docs = [];
-        const now = Date.now();
-        
-        snapshot.forEach(docSnap => {
-           const data = docSnap.data();
-           
-           // FILTER GHOST SESSION
-           // Dokter dianggap offline jika tidak mengirim denyut (lastActive) selama 2 Menit
-           const isActive = data.lastActive ? (now - data.lastActive < 120000) : (now - data.loginTime < 86400000);
-           
-           if (isActive) {
-               docs.push({ id: docSnap.id, ...data });
-           } else {
-               // Hapus otomatis di belakang layar dari database
-               deleteDoc(docSnap.ref).catch(() => {});
-           }
-        });
-        
-        docs.sort((a, b) => b.loginTime - a.loginTime);
-        setOnlineDoctors(docs);
-        setLoading(false);
-    }, (error) => {
-        console.error("Gagal memuat status online:", error);
-        setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  // Melakukan double filter untuk UI agar instan
-  const activeDoctors = onlineDoctors.filter(doc => {
-     return doc.lastActive ? (currentTime - doc.lastActive < 120000) : true;
-  });
 
   const formatTime = (timestamp) => {
     if(!timestamp) return "-";
@@ -1211,7 +1167,7 @@ function AdminDashboard({ onBack, user }) {
              <div className="h-14 w-14 bg-green-100 text-green-600 rounded-full flex items-center justify-center mr-4"><Users size={28}/></div>
              <div>
                <p className="text-sm text-slate-500 font-medium">Dokter Sedang Online</p>
-               <h3 className="text-3xl font-black text-slate-800">{activeDoctors.length}</h3>
+               <h3 className="text-3xl font-black text-slate-800">{onlineDoctors.length}</h3>
              </div>
           </div>
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center">
@@ -1219,7 +1175,7 @@ function AdminDashboard({ onBack, user }) {
              <div>
                <p className="text-sm text-slate-500 font-medium">Fasilitas Aktif (Wahana)</p>
                <h3 className="text-3xl font-black text-slate-800">
-                  {new Set(activeDoctors.map(d => d.wahana)).size}
+                  {new Set(onlineDoctors.map(d => d.wahana)).size}
                </h3>
              </div>
           </div>
@@ -1227,9 +1183,9 @@ function AdminDashboard({ onBack, user }) {
              <p className="text-xs text-slate-400 font-medium mb-1">Status Sinkronisasi Sistem</p>
              <div className="flex items-center z-10">
                <div className="h-2.5 w-2.5 bg-green-500 rounded-full animate-pulse mr-2"></div>
-               <span className="text-sm font-bold text-green-600">Terhubung & Tersinkron</span>
+               <span className="text-sm font-bold text-green-600">Database Real-time Terhubung</span>
              </div>
-             <p className="text-xs text-slate-500 mt-2 italic z-10">Akurasi Heartbeat: 30 Detik. Ghost Session akan dihapus otomatis.</p>
+             <p className="text-xs text-slate-500 mt-2 italic z-10">Akurasi Live: 10 Detik. Ghost Session terhapus dalam 60 Detik.</p>
           </div>
         </div>
 
@@ -1251,11 +1207,11 @@ function AdminDashboard({ onBack, user }) {
                <tbody className="divide-y divide-slate-100">
                  {loading ? (
                    <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-400"><Loader2 className="animate-spin mx-auto mb-2" size={24}/> Memuat data...</td></tr>
-                 ) : activeDoctors.length === 0 ? (
+                 ) : onlineDoctors.length === 0 ? (
                    <tr><td colSpan="4" className="px-6 py-10 text-center text-slate-500 font-medium">Tidak ada dokter yang sedang menggunakan generator saat ini.</td></tr>
                  ) : (
-                   activeDoctors.map((doc) => (
-                     <tr key={doc.id} className="hover:bg-slate-50 transition">
+                   onlineDoctors.map((doc, i) => (
+                     <tr key={i} className="hover:bg-slate-50 transition">
                        <td className="px-6 py-4 font-bold text-slate-800 flex items-center">
                           <User size={16} className="mr-2 text-slate-400"/> {doc.nama}
                        </td>
