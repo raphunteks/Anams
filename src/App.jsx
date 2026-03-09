@@ -7,7 +7,17 @@ import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged }
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'axa-iship-app';
-const fbConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+// Mendukung env variables dari Vercel dengan aman tanpa memicu warning es2015 Rollup
+let viteEnv = null;
+try {
+  viteEnv = import.meta.env.VITE_FIREBASE_CONFIG;
+} catch (error) {
+  // Abaikan error jika berjalan di luar environment Vite
+}
+
+const fbConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : viteEnv;
+
 let db = null;
 let auth = null;
 
