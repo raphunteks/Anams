@@ -1,21 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ChevronDown, Stethoscope, FileText, Copy, Check, Activity, ShieldPlus, ArrowRight, User, Hash, X, Syringe } from 'lucide-react';
+import { Search, ChevronDown, Stethoscope, FileText, Copy, Check, Activity, ShieldPlus, ArrowRight, User, Hash, X, Syringe, Pill, Trash2 } from 'lucide-react';
 
 // ==========================================
-// DATA TINDAKAN & KIE (Dari Spreadsheet)
+// DATA OBAT / MEDIKAMEN (Diurutkan A-Z)
+// ==========================================
+const medicationsList = [
+  "R / Acyclovir 5% gel tube No. I S 6 dd 1 lit.or",
+  "R / Aloclair plus gel tube No. I S 3 dd 1 lit.or",
+  "R / Amoksisilin Kaps 500mg No. X S 3 dd 1 pc",
+  "R / Amoksisilin syrup No. I S 3 dd 1 pc",
+  "R / Amoxicillin 500mg tab No. X S 3 dd 1 pc",
+  "R / Amoxicillin + Clavulanate 625mg tab No. X S 3 dd 1 pc",
+  "R / Asam Askorbat (Vit C) tab 50 mg No. X S 3 dd 1 p.c",
+  "R / Asam Mefenamat 500mg tab No. VI S 2 dd 1 pc",
+  "R / Asam Traneksamat 500mg tab No. X S 3 dd 1 pc",
+  "R / Becom C 500 mg tab No. III S 1 dd 1 pc",
+  "R / Cataflam 50mg tab No. X S 2 dd 1 pc",
+  "R / Cefadroxil 500mg tab No. VI S 2 dd 1 pc",
+  "R / Chlorhexidine gluconate 0,12% garg fl. No. I S 2 dd 1",
+  "R / Ciprofloxacin 500mg tab No. X S 2 dd 1 pc",
+  "R / Clindamycin 150mg tab No. X S 3 dd 1 pc",
+  "R / Daktarin 2% gel tube No. I S 4 dd 1 lit.or",
+  "R / Dexamethasone 0.5mg tab No. X S 3 dd 1 pc",
+  "R / Erythromycin 500mg tab No. X S 4 dd 1 pc",
+  "R / Ibuprofen tab 400 mg No. V S 3 dd 1 pc",
+  "R / Ketorolac 10mg tab No. X S 3 dd 1 pc",
+  "R / Klindamisin 300mg tab No. VI S 2 dd 1 pc",
+  "R / Methylprednisolone 4mg tab No. X S 3 dd 1 pc",
+  "R / Metronidazole 500mg tab No. X S 3 dd 1 pc",
+  "R / Minosep garg f.l No. I S 2 dd 1",
+  "R / Natrium diklofenak 50 mg No. X S 2 dd 1 pc",
+  "R / Nystatin oral susp fl. No. I S 2 dd 1",
+  "R / Paracetamol 500mg tab No. VI S 2 dd 1 pc",
+  "R / Paracetamol 500mg tab No. X S 3 dd 1 pc",
+  "R / Paracetamol syrup No. I S 3 dd 1 pc"
+];
+
+// ==========================================
+// DATA TINDAKAN & KIE
 // ==========================================
 const proceduresData = {
-  "Ekstraksi Permanen": {
-    tatalaksana: "1. Melakukan anamnesis\n2. Melakukan pemeriksaan ekstraoral dan intraoral\n3. Melakukan informed consent\n4. Melakukan tindakan asepsis pada area kerja\n5. Melakukan anestesi lokal pada area kerja dengan teknik intraligamen\n6. Melepaskan perlekatan jaringan lunak\n7. Menggerakkan gigi menggunakan elevator/bein\n8. Mencengkeram gigi dengan tang ekstraksi, lakukan gerakan luksasi, dan jika sudah mobile, lepaskan gigi dari soket\n9. Lakukan kuretase pada soket untuk memastikan tidak ada fragmen yang tersisa\n10. Lakukan irigasi/spooling dengan larutan saline\n11. Instruksikan kepada pasien untuk menggigit tampon pada luka bekas ekstraksi\n12. Pemberian obat; Amoxicillin tab 500 mg 3x1 & Paracetamol tab 500 mg 3x1",
-    kie: "1. Instruksikan pasien untuk menggigit tampon minimal 1 jam\n2. Hindari meludah dan berkumur terlalu sering\n3. Hindari makanan atau minuman yang panas\n4. Tidak mengganggu area bekas ekstraksi dengan lidah\n5. Tetap menjaga oral hygiene dengan menyikat gigi 2x sehari\n6. Minum obat sesuai yang diresepkan"
+  "Ekstraksi Gigi Permanen": {
+    tatalaksana: "1. Melakukan anamnesis\n2. Melakukan pemeriksaan ekstraoral dan intraoral\n3. Melakukan informed consent\n4. Mempersiapkan alat dan bahan\n5. Operator menggunakan APD\n6. Operator mengatur posisi pasien semi supine & pasien di instruksikan untuk berkumur terlebih dahulu\n7. Asepsis pada daerah kerja dengan tampon yang diaplikasikan povidon iodine\n8. Melakukan anastesi lokal pada area gigi yang ingin di kerja dengan teknik intraligament\n9. Melepaskan perlekatan jaringan lunak dengan excavator\n10. Menggerakkan gigi menggunakan bein hingga gigi terkeluar dari soket\n11. Melakukan kuretase pada soket untuk membersikan bekas jaringan granulasi & memastikan tidak ada fragmen yang tersisa dengan excavator\n12. Melakukan irigasi dengan larutan saline pada soket bekas pencabutan\n13. Menggigit tampon yang telah diaplikasikan dengan povidone iodine\n14. Pemberian obat/medikamen",
+    kie: "1. Menggigit tampon selama 30 menit\n2. Tidak mengganggu bekas pencabutan\n3. Tidak boleh menghisap-hisap bekas pencabutan\n4. Tidak merokok bagi perokok\n5. Tidak makan & minum panas\n6. Tidak berkumur secara keras\n7. Menginstruksikan pasien meminum obat secara teratur jika diberikan"
   },
-  "Ekstraksi Sulung (Topikal/Chlorethyl)": {
-    tatalaksana: "1. Lakukan persiapan pasien\n2. Lakukan tell show do kepada pasien\n3. Lakukan asepsis daerah kerja\n4. Semprotkan chlorethyl ke cotton pellet, kemudian tempelkan pada area kerja hingga pasien merasa kebas\n5. Posisikan tang ekstraksi mencapai bagian servikal gigi\n6. Lakukan gerakan luksasi dan rotasi hingga gigi terlepas dari soket\n7. Instruksikan pasien untuk menggigit tampon",
-    kie: "1. Instruksikan pasien untuk menggigit tampon minimal 1 jam\n2. Hindari makanan dan minuman yang panas, dianjurkan untuk mengonsumsi makanan dan minuman yang dingin\n3. Tidak mengganggu area bekas ekstraksi\n4. Tetap menjaga oral hygiene dengan menyikat gigi 2x sehari"
-  },
-  "Ekstraksi Sulung + Anestesi Lokal": {
-    tatalaksana: "1. Lakukan persiapan pasien\n2. Lakukan tell show do kepada pasien\n3. Lakukan asepsis area kerja\n4. Aplikasikan anestesi topikal di area kerja\n5. Lakukan anestesi lokal pada area kerja dengan teknik intraligamen\n6. Posisikan tang ekstraksi hingga mencapai bagian servikal gigi\n7. Lakukan gerakan luksasi hingga gigi terlepas dari soket\n8. Instruksikan pasien untuk menggigit tampon",
-    kie: "1. Instruksikan pasien untuk menggigit tampon minimal 1 jam\n2. Hindari makanan dan minuman yang panas, dianjurkan untuk mengonsumsi makanan dan minuman yang dingin\n3. Tidak mengganggu area bekas ekstraksi\n4. Tetap menjaga oral hygiene dengan menyikat gigi 2x sehari"
+  "Ekstraksi Gigi Sulung": {
+    tatalaksana: "1. Melakukan pemeriksaan objektif palpasi, perkusi, vitalitas\n2. Posisi pasien semi supine & pasien di instruksikan untuk berkumur terlebih dahulu\n3. Asepsis pada daerah kerja dengan tampon yang diaplikasikan povidon iodine\n4. Melakukan anastesi menggunakan chrol ethyl\n5. Melakukan ekstraksi dengan menggunakan tang\n6. Membersihkan bekas pencabutan dengan excavator\n7. Menggigit tampon yang telah diaplikasikan dengan povidone iodine",
+    kie: "1. Menggigit tampon selama 30 menit\n2. Tidak mengganggu bekas pencabutan\n3. Tidak boleh menghisap-hisap bekas pencabutan\n4. Tidak makan & minum yang panas\n5. Tidak berkumur secara keras"
   },
   "GIC Profunda": {
     tatalaksana: "1. Persiapan alat dan bahan\n2. Instruksikan pasien untuk berkumur dengan povidone iodine\n3. Isolasi daerah kerja\n4. Lakukan ekskavasi pada area kavitas menggunakan excavator\n5. Lakukan preparasi untuk menghilangkan jaringan karies menggunakan round bur\n6. Aplikasikan pasta calplus pada kavitas sebagai base\n7. Aduk powder dan liquid GIC hingga homogen dengan rasio 1:1\n8. Aplikasikan GIC pada kavitas dan tunggu sampai setting\n9. Aplikasikan vaseline pada permukaan tumpatan GIC",
@@ -65,7 +96,6 @@ function getToothLocation(toothStr) {
   return `gigi ${posisi} ${regio} ${rahang}`;
 }
 
-// Fungsi Parse Anamnesis Dinamis
 function parseAnamnesis(template, gender, toothNum) {
     const p_gender = gender === 'Laki-laki' ? 'Seorang pasien laki-laki' : (gender === 'Perempuan' ? 'Seorang pasien perempuan' : 'Seorang pasien');
     const p_loc = getToothLocation(toothNum);
@@ -74,10 +104,10 @@ function parseAnamnesis(template, gender, toothNum) {
 
 
 // ==========================================
-// DATABASE DIAGNOSIS KEDOKTERAN GIGI (FULL SMART)
+// DATABASE DIAGNOSIS KEDOKTERAN GIGI
 // ==========================================
 const dentalDatabase = [
-  // --- K02 - DENTAL CARIES ---
+  // --- K02 ---
   {
     code: "K02.0",
     name: "Caries limited to enamel",
@@ -149,7 +179,7 @@ const dentalDatabase = [
     tatalaksana: "1. KIE.\n2. Ekskavasi jaringan karies untuk menentukan kedalaman sebenarnya.\n3. Penegakan diagnosis definitif pada tahapan selanjutnya."
   },
 
-  // --- K04 - DISEASES OF PULP AND PERIAPICAL TISSUES ---
+  // --- K04 ---
   {
     code: "K04.0",
     name: "Pulpitis",
@@ -210,7 +240,6 @@ const dentalDatabase = [
     dd: "Kista Radikuler (K04.8), Abses Periapikal Kronis",
     tatalaksana: "1. KIE.\n2. Perawatan Saluran Akar (PSA) multipel kunjungan.\n3. Pembersihan, pembentukan saluran, Irigasi.\n4. Aplikasi medikasi intrakanal (Kalsium Hidroksida) untuk merangsang penyembuhan lesi apikal."
   },
-  // --- REVISI K04.6: UNTUK SISA AKAR / GIGI UTUH MATI ---
   {
     code: "K04.6",
     name: "Chronic apical periodontitis (Sisa Akar Dewasa / Gigi Utuh Mati)",
@@ -242,7 +271,7 @@ const dentalDatabase = [
     tatalaksana: "1. KIE bahwa terdapat kista yang harus diangkat.\n2. Rujuk ke Sp.BM (Spesialis Bedah Mulut) atau lakukan Perawatan Endodontik Bedah (Apeksreseksi + Enukleasi Kista).\n3. Ekstraksi gigi penyebab + Kuretase."
   },
 
-  // --- K00 - DISORDERS OF TOOTH DEVELOPMENT AND ERUPTION ---
+  // --- K00 ---
   {
     code: "K00.0",
     name: "Anodontia",
@@ -303,7 +332,6 @@ const dentalDatabase = [
     dd: "Fluorosis Berat",
     tatalaksana: "1. KIE tentang kondisi genetik.\n2. Manajemen preventif: kontrol karies ketat, aplikasi fluor.\n3. Full mouth rehabilitation."
   },
-  // --- REVISI K00.6: UNTUK GIGI SULUNG/GOYANG (PERSISTENSI) ---
   {
     code: "K00.6",
     name: "Disturbances in tooth eruption (Persistensi / Gigi Goyang)",
@@ -347,7 +375,7 @@ const dentalDatabase = [
 ];
 
 // ==========================================
-// KOMPONEN UTAMA (APP)
+// APLIKASI UTAMA (APP)
 // ==========================================
 export default function App() {
   const [currentPage, setCurrentPage] = useState('landing');
@@ -373,7 +401,7 @@ function LandingPage({ onStart }) {
              <Activity className="hidden text-blue-600" size={24} />
           </div>
           <span className="text-xl font-extrabold tracking-tight text-slate-800">
-            RSUD Kendari <span className="text-blue-600">PIDGI ISHIP</span>
+            RSUD Kota Kendari <span className="text-blue-600">PIDGI ISHIP</span>
           </span>
         </div>
         <button 
@@ -388,14 +416,14 @@ function LandingPage({ onStart }) {
         <div className="max-w-3xl">
           <div className="inline-flex items-center space-x-2 bg-blue-100/50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-semibold mb-8 border border-blue-200">
             <Activity size={16} />
-            <span>Sistem Pencatatan Klinis ICD-10 Kedokteran Gigi</span>
+            <span>Sistem Pencatatan Klinis & Peresepan Obat</span>
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight mb-6">
             Generator Rekam Medis <br/>
-            <span className="text-blue-600">Otomatis & Smart</span>
+            <span className="text-blue-600">Otomatis & Terpadu</span>
           </h1>
           <p className="text-lg text-slate-600 mb-10 max-w-2xl mx-auto">
-            Kini dilengkapi dengan <span className="font-semibold text-slate-800">Smart Narrative</span>. Anamnesis otomatis menyesuaikan Jenis Kelamin dan Elemen Gigi. Didukung database lengkap karies, pulpa, erupsi, hingga tatalaksana ekstraksi & penambalan sesuai SOP.
+            Dilengkapi dengan <strong>Smart Narrative</strong>, Tatalaksana (SOP Ekstraksi Permanen/Sulung dll), serta sistem Multi-Select Resep Obat (A-Z) khusus Kedokteran Gigi.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -403,7 +431,7 @@ function LandingPage({ onStart }) {
               onClick={onStart}
               className="px-8 py-4 text-lg font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center"
             >
-              Mulai Generate <Stethoscope className="ml-2" size={22} />
+              Mulai Generate SOAP <Stethoscope className="ml-2" size={22} />
             </button>
           </div>
         </div>
@@ -423,32 +451,48 @@ function GeneratorApp({ onBack }) {
   const [gender, setGender] = useState('Laki-laki');
   const [toothNum, setToothNum] = useState('');
 
-  // States Settings
+  // States ICD-10 Search
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedDisease, setSelectedDisease] = useState(null);
-  const [selectedProcedure, setSelectedProcedure] = useState('Bawaan ICD-10 (Default)');
-  const [copied, setCopied] = useState(false);
-
   const wrapperRef = useRef(null);
 
+  // States Tindakan Akhir
+  const [selectedProcedure, setSelectedProcedure] = useState('Bawaan ICD-10 (Default)');
+
+  // States Resep Obat (Multi Select)
+  const [selectedMeds, setSelectedMeds] = useState([]);
+  const [isMedDropdownOpen, setIsMedDropdownOpen] = useState(false);
+  const [medSearchTerm, setMedSearchTerm] = useState('');
+  const medWrapperRef = useRef(null);
+
+  const [copied, setCopied] = useState(false);
+
+  // Handle cliks outside of dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
+      if (medWrapperRef.current && !medWrapperRef.current.contains(event.target)) {
+        setIsMedDropdownOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef]);
+  }, []);
 
-  // Filter ICD-10 Search
+  // Filtering Logic
   const filteredData = dentalDatabase.filter(item => 
     item.code.toLowerCase().includes(searchQuery.toLowerCase()) || 
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSelect = (disease) => {
+  const filteredMeds = medicationsList.filter(med => 
+    med.toLowerCase().includes(medSearchTerm.toLowerCase())
+  );
+
+  const handleSelectICD = (disease) => {
     setSelectedDisease(disease);
     setSearchQuery(`${disease.code} - ${disease.name}`);
     setIsDropdownOpen(false);
@@ -457,9 +501,19 @@ function GeneratorApp({ onBack }) {
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
     setIsDropdownOpen(true);
-    if(e.target.value === '') {
-        setSelectedDisease(null);
+    if(e.target.value === '') setSelectedDisease(null);
+  };
+
+  const toggleMedication = (med) => {
+    if (selectedMeds.includes(med)) {
+      setSelectedMeds(selectedMeds.filter(m => m !== med));
+    } else {
+      setSelectedMeds([...selectedMeds, med]);
     }
+  };
+
+  const removeMedication = (med) => {
+    setSelectedMeds(selectedMeds.filter(m => m !== med));
   };
 
   // Generate Report Smart Logic
@@ -470,14 +524,19 @@ function GeneratorApp({ onBack }) {
     const parsedAnamnesis = parseAnamnesis(selectedDisease.anamnesis, gender, toothNum);
     
     // Process Plan / Tatalaksana
-    let tatalaksanaText = selectedDisease.tatalaksana;
     let isCustomProcedure = selectedProcedure !== 'Bawaan ICD-10 (Default)' && proceduresData[selectedProcedure];
-
     let planSection = "";
+
     if (isCustomProcedure) {
-      planSection = `Tindakan: ${selectedProcedure}\n\nTatalaksana:\n${proceduresData[selectedProcedure].tatalaksana}\n\nKIE:\n${proceduresData[selectedProcedure].kie}`;
+      planSection = `Tindakan Terpilih: ${selectedProcedure}\n\nTatalaksana:\n${proceduresData[selectedProcedure].tatalaksana}\n\nKIE:\n${proceduresData[selectedProcedure].kie}`;
     } else {
-      planSection = tatalaksanaText;
+      planSection = selectedDisease.tatalaksana;
+    }
+
+    // Process Resep Obat
+    let obatSection = "";
+    if (selectedMeds.length > 0) {
+      obatSection = "\n\nResep Obat / Medikamen:\n" + selectedMeds.map(m => `- ${m}`).join("\n");
     }
 
     return `IDENTITAS PASIEN
@@ -498,7 +557,7 @@ ${parsedAnamnesis}
 - Diagnosis Banding: ${selectedDisease.dd}
 
 [P] PLAN (TATALAKSANA)
-${planSection}
+${planSection}${obatSection}
 `;
   };
 
@@ -520,23 +579,20 @@ ${planSection}
             document.execCommand('copy');
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            textArea.remove();
-        }
+        } catch (error) {} 
+        finally { textArea.remove(); }
     }
   };
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm z-20">
+      <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shrink-0 shadow-sm z-30">
         <div className="flex items-center space-x-3">
            <div className="relative h-8 w-8 overflow-hidden rounded bg-blue-50 flex items-center justify-center border border-blue-100">
              <img src="/logo-axaiship.png" alt="Axa Logo" className="object-cover h-full w-full" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}/>
              <Activity className="hidden text-blue-600" size={18} />
           </div>
-          <h1 className="text-lg font-bold text-slate-800">RSUD Kendari PIDGI ISHIP Generator</h1>
+          <h1 className="text-lg font-bold text-slate-800">PIDGI ISHIP</h1>
         </div>
         <button 
           onClick={onBack}
@@ -549,9 +605,9 @@ ${planSection}
       <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
         
         {/* PANEL KIRI (Input) */}
-        <div className="w-full md:w-[420px] bg-white border-r border-slate-200 flex flex-col overflow-y-auto shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
+        <div className="w-full md:w-[450px] bg-white border-r border-slate-200 flex flex-col overflow-y-auto shrink-0 z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
           <div className="p-6">
-            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center border-b border-slate-100 pb-4">
+            <h2 className="text-xl font-bold text-slate-800 mb-5 flex items-center border-b border-slate-100 pb-3">
               <ShieldPlus className="mr-2 text-blue-600" size={24}/> 
               Input Data Klinis
             </h2>
@@ -596,9 +652,7 @@ ${planSection}
                       <option value="Laki-laki">Laki-laki</option>
                       <option value="Perempuan">Perempuan</option>
                     </select>
-                    <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
-                      <ChevronDown size={14} className="text-slate-400" />
-                    </div>
+                    <ChevronDown size={14} className="absolute inset-y-0 right-3 my-auto text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -613,18 +667,18 @@ ${planSection}
                       type="text" 
                       value={toothNum}
                       onChange={(e) => setToothNum(e.target.value)}
-                      placeholder="Ex: 16 (Gigi Belakang Kanan Rahang Atas)" 
+                      placeholder="Ex: 16 (Belakang Kanan Rahang Atas)" 
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm font-medium text-blue-700"
                     />
                  </div>
               </div>
             </div>
 
-            <div className="w-full h-px bg-slate-200 mb-6"></div>
+            <div className="w-full h-px bg-slate-200 mb-5"></div>
 
             {/* Diagnosis Dropdown */}
-            <div className="relative mb-6" ref={wrapperRef}>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">Pencarian Kode ICD-10 <span className="text-red-500">*</span></label>
+            <div className="relative mb-5" ref={wrapperRef}>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">Kode ICD-10 Diagnosis <span className="text-red-500">*</span></label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search size={18} className="text-blue-500" />
@@ -635,7 +689,7 @@ ${planSection}
                   onChange={handleSearchChange}
                   onFocus={() => setIsDropdownOpen(true)}
                   placeholder="Ketik K02, K04, K00..." 
-                  className="w-full pl-10 pr-10 py-3.5 bg-white border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none font-semibold text-slate-800 transition shadow-sm"
+                  className="w-full pl-10 pr-10 py-3 bg-white border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none font-semibold text-slate-800 transition shadow-sm"
                 />
                 
                 {/* Tombol X (Clear) */}
@@ -652,27 +706,25 @@ ${planSection}
                   </button>
                 )}
 
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <ChevronDown size={18} className="text-slate-400" />
-                </div>
+                <ChevronDown size={18} className="absolute inset-y-0 right-3 my-auto text-slate-400 pointer-events-none" />
               </div>
 
               {isDropdownOpen && (
-                <div className="absolute z-20 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-2xl max-h-72 overflow-y-auto py-1">
+                <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl max-h-64 overflow-y-auto py-1">
                   {filteredData.length > 0 ? (
                     filteredData.map((item, index) => (
                       <div 
                         key={index} 
-                        onClick={() => handleSelect(item)}
+                        onClick={() => handleSelectICD(item)}
                         className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition"
                       >
                         <div className="font-bold text-blue-700 text-sm">{item.code}</div>
-                        <div className="text-xs text-slate-600 mt-0.5">{item.name}</div>
+                        <div className="text-xs text-slate-600 mt-0.5 leading-snug">{item.name}</div>
                       </div>
                     ))
                   ) : (
                     <div className="px-4 py-6 text-sm text-slate-500 text-center">
-                      Data tidak ditemukan
+                      Diagnosis tidak ditemukan
                     </div>
                   )}
                 </div>
@@ -680,29 +732,94 @@ ${planSection}
             </div>
 
             {/* Pilihan Tindakan Akhir */}
-            <div className="relative bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="mb-5 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
               <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center">
                 <Syringe size={16} className="mr-2 text-indigo-500"/>
-                Pilih Tatalaksana / Tindakan Akhir
+                Tatalaksana / Tindakan Akhir
               </label>
               <div className="relative">
                 <select 
                   value={selectedProcedure}
                   onChange={(e) => setSelectedProcedure(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none cursor-pointer shadow-sm"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm font-medium text-slate-700 appearance-none cursor-pointer shadow-sm"
                 >
-                  <option value="Bawaan ICD-10 (Default)">- Bawaan ICD-10 (Default) -</option>
+                  <option value="Bawaan ICD-10 (Default)">- Sesuai Bawaan ICD-10 (Default) -</option>
                   {Object.keys(proceduresData).map((procName, idx) => (
                     <option key={idx} value={procName}>{procName}</option>
                   ))}
                 </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <ChevronDown size={16} className="text-slate-500" />
-                </div>
+                <ChevronDown size={16} className="absolute inset-y-0 right-3 my-auto text-slate-500 pointer-events-none" />
               </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Pilih opsi di atas untuk otomatis memuat Plan Tatalaksana & KIE khusus (sesuai SOP).
-              </p>
+            </div>
+
+            {/* PEMILIHAN OBAT (MULTI-SELECT) */}
+            <div className="relative mb-6" ref={medWrapperRef}>
+              <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center">
+                <Pill size={16} className="mr-2 text-emerald-500"/>
+                Resep Obat / Medikamen
+              </label>
+              
+              <div 
+                onClick={() => setIsMedDropdownOpen(!isMedDropdownOpen)}
+                className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg outline-none transition text-sm cursor-pointer shadow-sm flex items-center justify-between hover:border-emerald-400"
+              >
+                <span className={selectedMeds.length > 0 ? "text-slate-800 font-medium" : "text-slate-400"}>
+                  {selectedMeds.length > 0 ? `${selectedMeds.length} obat dipilih...` : 'Pilih Obat (Bisa lebih dari 1)'}
+                </span>
+                <ChevronDown size={16} className="text-slate-500" />
+              </div>
+
+              {isMedDropdownOpen && (
+                <div className="absolute z-30 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-2xl">
+                  {/* Search Obat */}
+                  <div className="p-2 border-b border-slate-100">
+                     <input 
+                       type="text" 
+                       placeholder="Cari obat..." 
+                       value={medSearchTerm}
+                       onChange={(e) => setMedSearchTerm(e.target.value)}
+                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded text-sm focus:outline-none focus:border-emerald-500"
+                     />
+                  </div>
+                  {/* List Obat */}
+                  <div className="max-h-56 overflow-y-auto py-1">
+                    {filteredMeds.length > 0 ? (
+                      filteredMeds.map((med, idx) => (
+                        <label key={idx} className="flex items-start px-3 py-2 hover:bg-emerald-50 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            className="mt-1 rounded text-emerald-500 focus:ring-emerald-500" 
+                            checked={selectedMeds.includes(med)}
+                            onChange={() => toggleMedication(med)}
+                          />
+                          <span className="ml-2 text-xs text-slate-700 leading-snug">{med}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <div className="px-4 py-4 text-xs text-slate-500 text-center">
+                        Obat tidak ditemukan
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tag/Chips Selected Meds */}
+              {selectedMeds.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {selectedMeds.map((med, idx) => (
+                    <div key={idx} className="inline-flex items-start justify-between bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-medium">
+                      <span className="break-words pr-2 leading-relaxed">{med}</span>
+                      <button 
+                        onClick={() => removeMedication(med)}
+                        className="text-emerald-500 hover:text-red-500 shrink-0 mt-0.5"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
@@ -736,7 +853,7 @@ ${planSection}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
                 <FileText size={72} className="mb-4 opacity-30 text-slate-500" />
                 <p className="text-lg font-medium text-slate-500">Kertas kerja SOAP belum diisi</p>
-                <p className="text-sm mt-2 text-slate-400">Pilih diagnosis ICD-10 di panel sebelah kiri terlebih dahulu.</p>
+                <p className="text-sm mt-2 text-slate-400 text-center px-4">Pilih diagnosis ICD-10 di panel sebelah kiri untuk memunculkan format otomatis.</p>
               </div>
             ) : (
               <div className="space-y-6 max-w-3xl mx-auto">
@@ -835,6 +952,18 @@ ${planSection}
                     <p className="pl-4 whitespace-pre-line text-[15px] leading-relaxed text-justify">{selectedDisease.tatalaksana}</p>
                   )}
                   
+                  {/* Resep Obat Section */}
+                  {selectedMeds.length > 0 && (
+                    <div className="pl-4 mt-6">
+                      <strong className="text-emerald-700 block mb-2 border-b border-emerald-100 pb-1">Resep Obat / Medikamen:</strong>
+                      <div className="space-y-1 mt-3">
+                        {selectedMeds.map((med, idx) => (
+                          <p key={idx} className="text-[15px] leading-relaxed italic text-slate-800">- {med}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
               </div>
