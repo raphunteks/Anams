@@ -94,7 +94,7 @@ const proceduresData = {
     kie: "1. Jangan makan menggunakan gigi tersebut selama 24 jam pertama pasca tindakan\n2. Instruksikan pasien untuk mengunyah di sisi yang tidak dilakukan perawatan\n3. Menjaga oral hygiene dengan menyikat gigi 2x sehari"
   },
   "Scaling": {
-    tatalaksana: "1. Persiapan alat dan bahan\n2. Menggunakan APD dan mengatur posisi kerja\n3. Instruksikan pasien untuk berkumur menggunakan povidone iodine\n4. Menghidupkan scaler ultrasonik\n5. Masukkan tip ke dalam handpiece dan cek besaran aliran air dan getaran alat yang diperlukan\n6. Bersihkan kalkulus dengan arah stroke vertikal, oblique, dan horizontal serta tip harus dalam gerakan konstan\n7. Permukaan gigi harus sering diperiksa atau dievaluasi dengan sonde\n8. Irigasi dengan menggunakan larutan antiseptik pada seluruh area yang telah discaling",
+    tatalaksana: "1. Persiapan alat dan bahan\n2. Menggunakan APD dan mengatur posisi kerja\n3. Instruksikan pasien untuk berkumur menggunakan povidone iodine\n4. Menghidupkan scaler ultrasonik\n5. Masukkan tip ke dalam handpiece dan cek besaran aliran air dan getaran alat yang diperlukan\n6. Bersihkan kalkulus dengan arah stroke vertikal, oblique, and horizontal serta tip harus dalam gerakan konstan\n7. Permukaan gigi harus sering diperiksa atau dievaluasi dengan sonde\n8. Irigasi dengan menggunakan larutan antiseptik pada seluruh area yang telah discaling",
     kie: "1. Menjaga kebersihan mulut dengan menyikat gigi 2x sehari\n2. Gunakan sikat gigi dengan bulu filamen halus\n3. Hindari mengonsumsi makanan panas dan pedas untuk sementara waktu agar gigi tidak terasa ngilu\n4. Instruksikan pasien untuk rutin melakukan pembersihan karang gigi setiap 6 bulan sekali"
   },
   "Premedikasi Abses": {
@@ -603,8 +603,37 @@ function LandingPage({ onStart, onGoAdmin }) {
       setMatchedDoc(found);
     } else {
       setIsValidated(false);
-      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai.");
+      setErrorMsg("Nama tidak ditemukan di Wahana tersebut. Pastikan ejaan sesuai Spreadsheet.");
     }
+  };
+
+  const sendDiscordNotification = async (docData) => {
+      const webhookUrl = "https://discord.com/api/webhooks/1480819183494234245/lL7x-HlImkNG5AFyCd_yYlpCu7GSP1msdU23-XZETQXAfkvCgC_y2RW3i2hDiaSx5kkS";
+      const timeString = new Date().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'long' });
+
+      const payload = {
+          embeds: [{
+              title: "🟢 Dokter Gigi Mulai Online",
+              color: 5763719, // Warna Hijau
+              description: "Seorang dokter baru saja memverifikasi identitas dan masuk ke sistem PIDGI ISHIP.",
+              fields: [
+                  { name: "👨‍⚕️ Nama Dokter", value: `**${docData.nama}**`, inline: true },
+                  { name: "🏥 Wahana (RS/Puskesmas)", value: `**${docData.wahana}**`, inline: true },
+                  { name: "⏰ Waktu Akses", value: timeString, inline: false }
+              ],
+              footer: { text: "PIDGI ISHIP SOAP Notifier" }
+          }]
+      };
+
+      try {
+          await fetch(webhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+      } catch (err) {
+          console.error("Webhook error:", err);
+      }
   };
 
   return (
@@ -720,7 +749,11 @@ function LandingPage({ onStart, onGoAdmin }) {
                     <p className="text-sm mt-1 opacity-90">Kredensial valid untuk <strong>{matchedDoc.nama}</strong> di {matchedDoc.wahana}.</p>
                   </div>
 
-                  <button onClick={() => onStart(matchedDoc)} className="w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center">
+                  <button onClick={() => {
+                      sendDiscordNotification(matchedDoc);
+                      onStart(matchedDoc);
+                    }} 
+                    className="w-full py-4 text-lg font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center">
                     Mulai Generate SOAP <Stethoscope className="ml-2" size={22} />
                   </button>
                   <button onClick={() => { setIsValidated(false); setInputDokter(''); setMatchedDoc(null); }} className="w-full mt-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition">
